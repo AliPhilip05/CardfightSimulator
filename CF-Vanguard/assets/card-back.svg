@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="360" height="504" viewBox="0 0 360 504" role="img" aria-labelledby="title desc">
+<title id="title">Original starfield card back</title><desc id="desc">A custom navy and gold geometric card back for the prototype.</desc>
+<defs><linearGradient id="bg" x2="0" y2="1"><stop stop-color="#111b39"/><stop offset="1" stop-color="#231b42"/></linearGradient><radialGradient id="orb"><stop stop-color="#ffe8a3"/><stop offset=".3" stop-color="#dfa948"/><stop offset="1" stop-color="#7b4b27"/></radialGradient></defs>
+<rect x="8" y="8" width="344" height="488" rx="22" fill="url(#bg)" stroke="#dfb65f" stroke-width="5"/><rect x="24" y="24" width="312" height="456" rx="15" fill="none" stroke="#aa7a36" stroke-width="2"/>
+<g fill="#fff2c2"><circle cx="59" cy="72" r="2"/><circle cx="287" cy="86" r="2"/><circle cx="81" cy="410" r="2"/><circle cx="284" cy="391" r="2"/><circle cx="180" cy="106" r="2"/><circle cx="105" cy="166" r="1.5"/><circle cx="254" cy="312" r="1.5"/></g>
+<g transform="translate(180 252)"><circle r="105" fill="none" stroke="#bc8a42" stroke-width="3"/><circle r="82" fill="none" stroke="#e8c778" stroke-width="1.5"/><path d="M0-126 22-25 103-72 34 0 103 72 22 25 0 126-22 25-103 72-34 0-103-72-22-25Z" fill="url(#orb)" stroke="#ffe6a0" stroke-width="2"/><circle r="26" fill="#17284b" stroke="#f4dc9b" stroke-width="4"/><circle r="8" fill="#fff3cf"/></g>
+<text x="180" y="440" fill="#f3d999" font-family="serif" font-size="15" letter-spacing="3" text-anchor="middle">STAND UP · PROTOTYPE</text>
+</svg>

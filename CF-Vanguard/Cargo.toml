@@ -1,0 +1,9 @@
+[package]
+name = "vanguard_story"
+version = "0.1.0"
+edition = "2021"
+description = "A visual Cardfight Vanguard prototype inspired by the Limit Break and Break Ride eras"
+
+[dependencies]
+macroquad = "0.4"
+serde_json = "1"
