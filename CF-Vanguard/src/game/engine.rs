@@ -228,6 +228,34 @@ impl MatchGame {
             && self.player.face_up_damage() >= 2
     }
 
+    /// Manual tabletop resource control. Automatic ability costs read the same
+    /// face-up state, so spent damage cannot be paid a second time.
+    pub fn can_flip_damage(&self) -> bool {
+        matches!(self.phase, Phase::Ride | Phase::Call | Phase::Battle)
+            && self.pending_attack.is_none()
+            && self.winner.is_none()
+    }
+
+    pub fn flip_damage(&mut self, index: usize) -> bool {
+        if !self.can_flip_damage() {
+            return false;
+        }
+        let Some(damage) = self.player.damage.get_mut(index) else {
+            return false;
+        };
+        damage.face_up = !damage.face_up;
+        self.message = if damage.face_up {
+            format!(
+                "Damage {} turned face up (manual Counter-Charge / correction).",
+                index + 1
+            )
+        } else {
+            format!("Counter-Blast 1: damage {} turned face down.", index + 1)
+        };
+        self.log(self.message.clone());
+        true
+    }
+
     pub fn use_limit_break(&mut self) {
         if !self.can_limit_break() {
             return;
@@ -874,6 +902,53 @@ mod tests {
         game.cpu.vanguard = unit("Opposing Vanguard", 2, 10000, 5000);
         game.phase = Phase::Battle;
         game
+    }
+
+    #[test]
+    fn flipping_damage_updates_costs_without_moving_or_reordering_cards() {
+        let mut game = battle();
+        game.player.vanguard.as_mut().unwrap().card.limit_break = true;
+        game.player.damage = (0..4)
+            .map(|_| DamageCard {
+                card: card("Damage", 1, 6000, 5000),
+                face_up: true,
+            })
+            .collect();
+        assert!(game.can_limit_break());
+        assert!(game.flip_damage(2));
+        assert!(!game.player.damage[2].face_up);
+        assert_eq!(game.player.face_up_damage(), 3);
+        game.use_limit_break();
+        assert_eq!(game.player.face_up_damage(), 1);
+        assert!(!game.can_limit_break());
+        assert_eq!(game.player.damage.len(), 4);
+        assert!(game.flip_damage(2));
+        assert_eq!(game.player.face_up_damage(), 2);
+        assert!(game.can_limit_break());
+        assert_eq!(game.player.damage[2].card.name, "Damage");
+        assert!(!game.flip_damage(4));
+        assert!(!game.flip_damage(usize::MAX));
+        assert!(game.cpu.damage.is_empty());
+    }
+
+    #[test]
+    fn damage_cannot_be_manually_changed_during_opponent_turn_battle_or_result() {
+        let mut game = battle();
+        game.player.damage.push(DamageCard {
+            card: card("Damage", 1, 6000, 5000),
+            face_up: true,
+        });
+        assert!(game.declare_attack(AttackUnit::Vanguard, AttackUnit::Vanguard, false));
+        assert!(!game.flip_damage(0));
+        game.pending_attack = None;
+        for phase in [Phase::Cpu, Phase::Finished] {
+            game.phase = phase;
+            assert!(!game.flip_damage(0));
+            assert!(game.player.damage[0].face_up);
+        }
+        game.phase = Phase::Call;
+        game.winner = Some(true);
+        assert!(!game.flip_damage(0));
     }
 
     #[test]

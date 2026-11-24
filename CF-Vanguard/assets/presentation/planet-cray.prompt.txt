@@ -1,0 +1,6 @@
+Generation tool: built-in image_gen
+Asset: planet-cray.png
+Purpose: original Planet Cray-inspired environment; not extracted game artwork.
+Date: 2026-11-24
+
+Use case: illustration-story. Asset type: widescreen background for a Cardfight Vanguard fan game's opening/title/loading screen, Planet Cray inspired. Create a high quality 16:9 anime game landscape with rocky plateaus and moss-covered canyon walls framing a broad ancient pale stone road leading toward a luminous distant fantasy citadel, blue atmospheric mountains, and a huge pale blue ringed planet arcing across a deep cobalt sky with a few smaller moons. Style: richly painted 2010s Japanese anime RPG background, crisp beautiful layered scenery, dramatic luminous clouds, cyan light and royal blue shadows, subtle golden sunrise along horizon. Composition: lower horizon at 55% image height, landscape readable at desktop resolution, spacious less-detailed sky in upper-right for a game title; left half will receive separate character cutouts so put no focal characters there. Full-bleed landscape, no borders, no text, no lettering, no logos, no characters, no UI, no cards. This is original environment artwork inspired by the fantasy world, not a screenshot. Background must be opaque.

@@ -11,6 +11,12 @@
 
 ## Sources
 
+### Tabletop update (2026-11-24)
+
+- The [official classic First Guide](https://en.cf-vanguard.com/wordpress/wp-content/uploads/VGFG_ver5_02-1.pdf), visually inspected at the "Parts of the Playmat" panel, puts the Guardian Circle above the Vanguard, two front-row rear-guards beside it, three aligned back-row rear-guards, damage on the left, and Trigger Zone / Deck / Drop down the right. The match mirrors this arrangement for the opponent. A shared central guardian area adapts that paper layout to a two-player screen. The damage zone now uses one sideways overlapping stack, with clickable exposed strips.
+- The [official comprehensive rules](https://en.cf-vanguard.com/wordpress/wp-content/uploads/Cardfight-Vanguard-Comprehensive-Rules-2.pdf) define Counter-Blast as turning the specified number of face-up damage cards face down. Face-down damage remains in the damage zone and still counts toward total damage. Manual tabletop flips now update the same face-up resource state used by automatic Limit Break costs. Flipping face up is an explicit manual resource correction / Counter-Charge control, not an automatically granted card ability.
+- The [official anime character page](https://anime.cf-vanguard.com/vg2018-if/characters/aichi-sendou/) supplies real transparent Aichi and Kai icons. Official sleeve product illustrations and the downloaded community transparent circle template are documented, with exact source URLs and checksums, in `assets/README.md` and `assets/tabletop/sources.json`. These cosmetic images include 2018/2019 artwork; they do not change the historical card pool or field rules.
+
 - [Ride to Victory!! game overview](https://cardfight.fandom.com/wiki/Cardfight!!_Vanguard:_Ride_to_Victory!!) — release, BT09 card pool, avatar count, and story coverage.
 - [Ride to Victory!! story translation, Part 1](https://vanguardus.blogspot.com/2013/04/ride-to-victory-translation-part-1-card.html) — starting at Card Capital and tutorial / trial deck setup.
 - [Ride to Victory!! story translation index](https://vanguardus.blogspot.com/p/ride-to-victory.html) — shop, regional, and national tournament sequence.
@@ -25,3 +31,11 @@
 - [Archived comprehensive rules PDF](https://en.cf-vanguard.com/wordpress/wp-content/uploads/Cardfight-Vanguard-Comprehensive-Rules.pdf) — old battle order, triggers, damage, rides, and circles.
 - [Official 2012 playbook: Parts of the Play Mat](https://en.cf-vanguard.com/howto/pdf/VG_playbook_6_5.pdf) — used as the visual reference for the original board's Vanguard, five Rear-guard, Guardian, Damage, Drop, Deck, and Trigger zones; also documents that Main Phase calls can continue as many times as legal.
 - [Break Ride rules overview](https://cardfight.fandom.com/wiki/Break_Ride) and [Lock rules overview](https://cardfight.fandom.com/wiki/Lock) — concise mechanic descriptions.
+
+
+## Ride to Victory!! presentation refresh (2026-11-24)
+
+- Inspected the publisher's [game overview](https://www.cs.furyu.jp/vanguard-rtv/system/index.html), particularly [the official battle screenshot](https://www.cs.furyu.jp/vanguard-rtv/system/img/system_speedy_ph.png). It shows a black play surface framed in metallic/blue graphics, yellow Rear-guard circles, blue Vanguard circles and a complete green oval Guardian Circle. The desktop version keeps its readable overhead geometry and implements those visual cues rather than copying the 3DS interface or its rendered cards.
+- The [publisher's title page](https://www.cs.furyu.jp/vanguard-rtv/) and [rival introduction](https://www.cs.furyu.jp/vanguard-rtv/card/index.html) informed the character-led opening presentation. Aichi and Kai are grouped on the left, with a title, menu and progress display on the right. Actual database parsing, deck construction and opening-card texture preloading are split across rendered frames. The completed fight-loading screen has a brief transition; percentages report completed work, not an invented timer.
+- The [official world overview](https://en.cf-vanguard.com/introduction/world/) describes Planet Cray, and its [small reference image](https://cf-vanguard.com/wordpress/wp-content/uploads/world_planet.jpg) shows rocky plateaus beneath a blue sky, moons and a large ringed celestial body. The opening backdrop is an original generated interpretation of that setting, not a game extraction. The exact prompt is saved in `assets/presentation/planet-cray.prompt.txt`.
+- The transparent standing renders come from the [official Aichi page](https://anime.cf-vanguard.com/vg2018-if/characters/aichi-sendou/) and [Kai page](https://anime.cf-vanguard.com/vg2018-if/characters/toshiki-kai/). They are newer anime promotional artwork used as cosmetics; field rules and the historical card pool remain unchanged.

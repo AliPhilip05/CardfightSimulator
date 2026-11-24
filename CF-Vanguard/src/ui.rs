@@ -5,11 +5,12 @@ mod board;
 mod cards;
 mod drawing;
 mod match_hud;
+mod presentation;
 
 use crate::game::engine::{AttackUnit, MatchGame, Phase};
 use crate::story::{SchoolRoute, CHAPTERS};
 use art::{normalize_card_name, CardArt};
-use board::{draw_battlefield, BattlefieldHighlights, BattlefieldLayout};
+use board::{draw_battlefield, BattlefieldHighlights, BattlefieldLayout, TabletopArt};
 use cards::{draw_guard_card, draw_player_hand, fit_caption, HandLayout};
 use drawing::{
     button, draw_ambient_background, draw_centered, draw_header, draw_round_panel,
@@ -20,10 +21,13 @@ use macroquad::prelude::*;
 use match_hud::{
     draw_battle_log, draw_command_button, draw_match_hud, draw_match_shell, MatchLayout,
 };
+use presentation::PresentationArt;
 use std::collections::HashMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Screen {
+    Title,
+    Loading,
     Menu,
     RouteSelect,
     Match,
@@ -64,6 +68,9 @@ enum MatchAction {
 
 pub struct App {
     screen: Screen,
+    presentation: PresentationArt,
+    loading_stage: u8,
+    loading_started: f64,
     route: SchoolRoute,
     story_mode: bool,
     chapter_index: usize,
@@ -74,7 +81,9 @@ pub struct App {
     guard_selection: Option<GuardSelection>,
     guard_press: Option<Vec2>,
     cpu_continue_at: f64,
-    playmat: Texture2D,
+    tabletop_art: TabletopArt,
+    aichi_icon: Texture2D,
+    kai_icon: Texture2D,
     guard_glyph: Texture2D,
     target_glyph: Texture2D,
     boost_glyph: Texture2D,
@@ -87,13 +96,21 @@ pub struct App {
 }
 
 impl App {
-    pub fn new() -> Self {
+    pub async fn load() -> Self {
+        let presentation = PresentationArt::new();
+        presentation.loading(0.0, "READING CARD DATABASE");
+        next_frame().await;
         let database: serde_json::Value =
             serde_json::from_str(include_str!("../assets/official_era_cards.json"))
                 .expect("official card metadata must be valid JSON");
         let card_records = database["cards"].as_array().cloned().unwrap_or_default();
-        Self {
-            screen: Screen::Menu,
+        presentation.loading(0.35, "INITIALIZING THE FIGHT FIELD");
+        next_frame().await;
+        let app = Self {
+            screen: Screen::Title,
+            presentation,
+            loading_stage: 0,
+            loading_started: 0.0,
             route: SchoolRoute::Miyaji,
             story_mode: false,
             chapter_index: 0,
@@ -104,7 +121,15 @@ impl App {
             guard_selection: None,
             guard_press: None,
             cpu_continue_at: 0.0,
-            playmat: embedded_texture(include_bytes!("../assets/supplied-playmat.png")),
+            tabletop_art: TabletopArt {
+                zones: embedded_texture(include_bytes!("../assets/tabletop/vanguard-zones.png")),
+                aichi_sleeve: embedded_texture(include_bytes!(
+                    "../assets/tabletop/aichi-sleeve.png"
+                )),
+                kai_sleeve: embedded_texture(include_bytes!("../assets/tabletop/kai-sleeve.png")),
+            },
+            aichi_icon: embedded_texture(include_bytes!("../assets/fighters/aichi-icon.png")),
+            kai_icon: embedded_texture(include_bytes!("../assets/fighters/kai-icon.png")),
             guard_glyph: embedded_texture(include_bytes!("../assets/glyph-guard.png")),
             target_glyph: embedded_texture(include_bytes!("../assets/glyph-target.png")),
             boost_glyph: embedded_texture(include_bytes!("../assets/glyph-boost.png")),
@@ -114,16 +139,28 @@ impl App {
             library_filter: String::new(),
             library_page: 0,
             selected_library_card: None,
-        }
+        };
+        app.presentation.loading(1.0, "READY TO STAND UP");
+        next_frame().await;
+        app
     }
 
     pub fn draw(&mut self) {
         clear_background(INK);
-        if self.screen != Screen::Match {
+        if matches!(
+            self.screen,
+            Screen::RouteSelect | Screen::Library | Screen::Result
+        ) {
             draw_ambient_background();
         }
 
         match self.screen {
+            Screen::Title => {
+                if self.presentation.title() {
+                    self.screen = Screen::Menu;
+                }
+            }
+            Screen::Loading => self.draw_match_loading(),
             Screen::Menu => self.draw_menu(),
             Screen::RouteSelect => self.draw_routes(),
             Screen::Match => self.draw_match(),
@@ -133,70 +170,75 @@ impl App {
     }
 
     fn draw_menu(&mut self) {
-        let width = screen_width();
-        draw_rectangle(0.0, 0.0, width, 86.0, Color::new(0.025, 0.04, 0.08, 0.96));
-        draw_text("CARDFIGHT!! VANGUARD", 58.0, 58.0, 36.0, CREAM);
-        draw_text("LIMIT BREAK     /     BREAK RIDE", 62.0, 116.0, 18.0, GOLD);
-
-        let title_x = width * 0.5 - 250.0;
-        draw_round_panel(title_x, 180.0, 500.0, 330.0, PANEL, GOLD);
-        draw_star_emblem(width * 0.5, 300.0, 86.0);
-        draw_text(
-            "STAND UP, VANGUARD!",
-            width * 0.5 - 184.0,
-            445.0,
-            25.0,
-            CREAM,
-        );
-        draw_text(
-            "A fan-made Rust cardfight prototype",
-            width * 0.5 - 170.0,
-            479.0,
-            17.0,
-            MUTED,
-        );
-
-        let button_y = 555.0;
-        if button(
+        self.presentation.scene();
+        self.presentation.heading();
+        if self.presentation.menu_button(
             "STORY MODE",
-            width * 0.5 - 265.0,
-            button_y,
-            250.0,
-            68.0,
-            GOLD,
+            "Follow the road from Card Capital to the final fight",
+            0,
         ) {
             self.story_mode = true;
             self.screen = Screen::RouteSelect;
         }
-        if button(
+        if self.presentation.menu_button(
             "QUICK FIGHT",
-            width * 0.5 + 15.0,
-            button_y,
-            250.0,
-            68.0,
-            CYAN,
+            "Stand up your Vanguard and challenge the CPU",
+            1,
         ) {
             self.story_mode = false;
             self.chapter_index = 0;
             self.start_match();
         }
-        if button(
+        if self.presentation.menu_button(
             "ERA CARD LIBRARY",
-            width * 0.5 - 145.0,
-            button_y + 90.0,
-            290.0,
-            54.0,
-            MUTED,
+            "Explore the Limit Break and Break Ride card pool",
+            2,
         ) {
             self.screen = Screen::Library;
         }
-        draw_text(
-            "Mouse controls  ·  Escape returns to the menu",
-            width * 0.5 - 199.0,
-            820.0,
-            17.0,
-            MUTED,
-        );
+        if is_key_pressed(KeyCode::Escape) {
+            self.screen = Screen::Title;
+        }
+    }
+
+    fn draw_match_loading(&mut self) {
+        let (progress, caption) = match self.loading_stage {
+            0 => (0.0, "BUILDING THE FIGHTERS' DECKS"),
+            1 => (0.5, "LOADING YOUR OPENING HAND"),
+            _ => (1.0, "FIGHT READY"),
+        };
+        self.presentation.loading(progress, caption);
+        if is_key_pressed(KeyCode::Escape) {
+            self.match_game = None;
+            self.screen = Screen::Menu;
+            return;
+        }
+        match self.loading_stage {
+            0 => {
+                let mut chapter = CHAPTERS[self.chapter_index];
+                if self.chapter_index == 4 {
+                    let (rival, clan, boss) = self.route.rival();
+                    chapter.rival = rival;
+                    chapter.rival_clan = clan;
+                    chapter.rival_boss = boss;
+                }
+                self.match_game = Some(MatchGame::new(chapter));
+                self.loading_stage = 1;
+            }
+            1 => {
+                if let Some(game) = &self.match_game {
+                    self.card_art.preload(&visible_card_names(game));
+                }
+                self.loading_stage = 2;
+            }
+            _ => {
+                // A short completed transition gives the opening art time to
+                // settle; the progress bar already reports the actual work.
+                if get_time() - self.loading_started >= 0.65 {
+                    self.screen = Screen::Match;
+                }
+            }
+        }
     }
 
     fn draw_routes(&mut self) {
@@ -273,12 +315,18 @@ impl App {
             .map_or(&[][..], |attack| attack.guardians.as_slice());
 
         draw_match_shell(&layout);
-        let toggle_log = draw_match_hud(game, &layout, self.show_battle_log);
+        let toggle_log = draw_match_hud(
+            game,
+            &layout,
+            self.show_battle_log,
+            &self.aichi_icon,
+            &self.kai_icon,
+        );
         draw_battlefield(
             game,
             self.card_art.textures(),
             &battlefield,
-            &self.playmat,
+            &self.tabletop_art,
             &self.battlefield_highlights(game),
             guardians,
         );
@@ -622,6 +670,15 @@ impl App {
                 self.screen = Screen::Menu;
             }
             return;
+        }
+
+        if is_mouse_button_pressed(MouseButton::Left) {
+            if let Some(index) = battlefield.damage_at(mouse, game.player.damage.len(), false) {
+                if game.flip_damage(index) {
+                    self.guard_press = None;
+                }
+                return;
+            }
         }
 
         let playing_guard = game
@@ -983,14 +1040,9 @@ impl App {
     }
 
     fn start_match(&mut self) {
-        let mut chapter = CHAPTERS[self.chapter_index];
-        if self.chapter_index == 4 {
-            let (rival, clan, boss) = self.route.rival();
-            chapter.rival = rival;
-            chapter.rival_clan = clan;
-            chapter.rival_boss = boss;
-        }
-        self.match_game = Some(MatchGame::new(chapter));
+        self.match_game = None;
+        self.loading_stage = 0;
+        self.loading_started = get_time();
         self.selected_hand_card = None;
         self.hand_page = 0;
         self.attack_selection = None;
@@ -998,7 +1050,7 @@ impl App {
         self.guard_press = None;
         self.cpu_continue_at = 0.0;
         self.show_battle_log = false;
-        self.screen = Screen::Match;
+        self.screen = Screen::Loading;
     }
 }
 
@@ -1045,6 +1097,12 @@ fn visible_card_names(game: &MatchGame) -> Vec<String> {
         names.extend(attack.guardians.iter().map(|card| card.name.to_string()));
     }
     for player in [&game.player, &game.cpu] {
+        if let Some(card) = player.drop_zone.last() {
+            names.push(card.name.to_owned());
+        }
+        if let Some(check) = &player.last_check {
+            names.push(checked_card_name(check).to_owned());
+        }
         if let Some(vanguard) = &player.vanguard {
             names.push(vanguard.card.name.to_string());
         }
@@ -1064,6 +1122,13 @@ fn visible_card_names(game: &MatchGame) -> Vec<String> {
         );
     }
     names
+}
+
+fn checked_card_name(check: &str) -> &str {
+    check
+        .strip_prefix("Drive: ")
+        .or_else(|| check.strip_prefix("Damage: "))
+        .unwrap_or(check)
 }
 
 fn draw_card_detail(card: &serde_json::Value, textures: &HashMap<String, Texture2D>) {

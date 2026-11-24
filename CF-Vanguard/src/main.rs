@@ -18,7 +18,7 @@ fn window_conf() -> Conf {
 
 #[macroquad::main(window_conf)]
 async fn main() {
-    let mut app = App::new();
+    let mut app = App::load().await;
     loop {
         app.draw();
         next_frame().await;

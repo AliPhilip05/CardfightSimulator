@@ -1,0 +1,130 @@
+[
+  {
+    "file": "fighters/aichi-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-01.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/aichi-sendou/",
+    "download_sha256": "33ebacd946ddad588b0b1106c8bad7f626bd82b9861c1e77053104c8b52889ad",
+    "png_sha256": "33ebacd946ddad588b0b1106c8bad7f626bd82b9861c1e77053104c8b52889ad",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/kai-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-02.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/aichi-sendou/",
+    "download_sha256": "950ff1cffa39ddb8860317908b5d04121a278e232a7474805e531b181238b82b",
+    "png_sha256": "950ff1cffa39ddb8860317908b5d04121a278e232a7474805e531b181238b82b",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/aichi-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-01.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/aichi-sendou/",
+    "download_sha256": "9986369be281623c3e998b6e228abce1a0a549715e5b26296b711c99c218b561",
+    "png_sha256": "9986369be281623c3e998b6e228abce1a0a549715e5b26296b711c99c218b561",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/kai-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-02.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/toshiki-kai/",
+    "download_sha256": "c242bf6dd6f62a51bfc9511de0ddbf200b537314ae8dadf75427250df545358d",
+    "png_sha256": "c242bf6dd6f62a51bfc9511de0ddbf200b537314ae8dadf75427250df545358d",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "presentation/vanguard-logo.png",
+    "source_url": "https://en.cf-vanguard.com/wordpress/wp-content/themes/cf-vanguard/img/vg_logo_en.png",
+    "source_page": "https://en.cf-vanguard.com/",
+    "download_sha256": "52d45f690399758ce83cd52240781614f45f523bbe4ff96cd3faed629d45f3bb",
+    "png_sha256": "52d45f690399758ce83cd52240781614f45f523bbe4ff96cd3faed629d45f3bb",
+    "size": [
+      474,
+      211
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "tabletop/aichi-sleeve.png",
+    "source_url": "https://cf-vanguard.com/wordpress/wp-content/uploads/sleeve399.jpg",
+    "source_page": "https://cf-vanguard.com/products/supply/minisleeve_399/",
+    "download_sha256": "3eee2ed273f2aae9c18e3accf89498044f634bbbde6b286662d9f3276d1463f0",
+    "png_sha256": "d5ef83c84ff4d2834b940709812ef764b1e553e4047dc1253c10c5fdcf71cff9",
+    "size": [
+      200,
+      287
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "sleeve"
+  },
+  {
+    "file": "tabletop/kai-sleeve.png",
+    "source_url": "https://cf-vanguard.com/wordpress/wp-content/uploads/sleeve389.jpg",
+    "source_page": "https://cf-vanguard.com/products/supply/minisleeve_389/",
+    "download_sha256": "47c9f7594707a9e4c226445bdcc88e75ca18a9073146f97af91006b5ff38c495",
+    "png_sha256": "5c07d092906f7828867a37fb56451645c6198a37e4967e4e877c491ce4966904",
+    "size": [
+      200,
+      287
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "sleeve"
+  },
+  {
+    "file": "tabletop/vanguard-zones.png",
+    "source_url": "https://drive.google.com/uc?export=download&id=1_HDsYJEwk1H1S_rg74zXzGthCbwFcUYF",
+    "source_page": "https://www.reddit.com/r/cardfightvanguard/comments/rpbpwi/",
+    "download_sha256": "25232856823d1b36fc058bebe7c46d99bbdb5520623e5a88fdc320eb7f91040c",
+    "png_sha256": "f0d75df123621d4d8c59aac5af9dae36231e45df0aa03c7675631d53aa54f46f",
+    "size": [
+      1728,
+      1008
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "psd"
+  }
+]

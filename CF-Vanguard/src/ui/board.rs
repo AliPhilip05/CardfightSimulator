@@ -1,40 +1,49 @@
 //! The shared geometry for drawing and clicking the tabletop.
 
 use super::cards::{draw_card_face, draw_field_unit, draw_guard_card};
-use super::drawing::{draw_centered, draw_round_panel, draw_wrapped, CREAM, MUTED, PANEL};
+use super::drawing::{draw_centered, draw_round_panel, draw_wrapped, CREAM, PANEL};
 use crate::game::card::{Card, Player, Unit};
 use crate::game::engine::MatchGame;
 use macroquad::prelude::*;
 use std::collections::HashMap;
 
 // The art remains at its original proportions. Only the spaces between zones resize.
-const MIN_WIDTH: f32 = 710.0;
+const MIN_WIDTH: f32 = 1100.0;
 const TABLE_HEIGHT: f32 = 720.0;
 const CENTER_Y: f32 = TABLE_HEIGHT * 0.5;
 const CPU_BACK_Y: f32 = 78.0;
 const CPU_FRONT_Y: f32 = 221.0;
-const COLUMN_FRACTIONS: [f32; 3] = [0.28, 0.50, 0.72];
+const COLUMN_FRACTIONS: [f32; 3] = [0.32, 0.50, 0.68];
 const CIRCLE_RADIUS: f32 = 65.0;
 const CARD_SIZE: Vec2 = Vec2::new(75.0, 108.0);
-const GUARDIAN_RADII: Vec2 = Vec2::new(110.0, 45.0);
-const DAMAGE_POCKET: Vec2 = Vec2::new(123.0, 271.0);
-const DAMAGE_CARD_SIZE: Vec2 = Vec2::new(48.0, 70.0);
-const DAMAGE_STEP_X: f32 = 57.0;
-const DAMAGE_STEP_Y: f32 = 76.0;
-const PAPER: Color = Color::new(0.944, 0.955, 0.958, 1.0);
-const EDGE: Color = Color::new(0.606, 0.724, 0.776, 1.0);
-const POCKET: Color = Color::new(0.875, 0.917, 0.936, 1.0);
-const POCKET_INSET: Color = Color::new(0.842, 0.895, 0.917, 1.0);
-const INK: Color = Color::new(0.094, 0.170, 0.232, 1.0);
+const GUARDIAN_RADII: Vec2 = Vec2::new(110.0, 50.0);
+const DAMAGE_POCKET: Vec2 = Vec2::new(132.0, 250.0);
+const DAMAGE_CARD_SIZE: Vec2 = Vec2::new(CARD_SIZE.y, CARD_SIZE.x);
+const DAMAGE_STEP: f32 = 27.0;
+const EDGE: Color = Color::from_rgba(77, 148, 193, 255);
+const POCKET: Color = Color::from_rgba(14, 23, 34, 255);
+const INK: Color = Color::from_rgba(212, 231, 243, 255);
 
-// Art regions from the user-provided supplied-playmat.png.
-const REAR_ART: Rect = Rect::new(141.0, 260.0, 132.0, 132.0);
-const VANGUARD_ART: Rect = Rect::new(273.0, 92.0, 169.0, 161.0);
-const GUARDIAN_ART: Rect = Rect::new(264.0, 0.0, 185.0, 95.0);
-const CARD_BACK_ART: Rect = Rect::new(612.0, 144.0, 73.0, 103.0);
-const DECK_ART: Rect = Rect::new(608.0, 140.0, 81.0, 110.0);
-const DROP_ART: Rect = Rect::new(608.0, 269.0, 81.0, 111.0);
-const TRIGGER_ART: Rect = Rect::new(15.0, 20.0, 110.0, 110.0);
+// Transparent circle art from the downloaded community template. Auxiliary
+// zones follow Bushiroad's classic guide, rather than its overDress additions.
+const REAR_ART: Rect = Rect::new(370.0, 275.0, 282.0, 282.0);
+const VANGUARD_ART: Rect = Rect::new(690.0, 245.0, 350.0, 350.0);
+
+pub(super) struct TabletopArt {
+    pub zones: Texture2D,
+    pub aichi_sleeve: Texture2D,
+    pub kai_sleeve: Texture2D,
+}
+
+impl TabletopArt {
+    fn sleeve(&self, cpu: bool) -> &Texture2D {
+        if cpu {
+            &self.kai_sleeve
+        } else {
+            &self.aichi_sleeve
+        }
+    }
+}
 
 #[derive(Default)]
 pub(super) struct BattlefieldHighlights {
@@ -113,15 +122,21 @@ impl BattlefieldLayout {
     }
 
     fn damage_center(&self, cpu: bool) -> Vec2 {
-        self.side_point(vec2(self.width * 0.10, 576.0), cpu)
+        self.side_point(vec2(self.width * 0.10, 580.0), cpu)
     }
 
     fn damage_card(&self, index: usize, cpu: bool) -> Rect {
-        let column = (index % 2) as f32 - 0.5;
-        let row = (index / 2) as f32 - 1.0;
         let directions = if cpu { -1.0 } else { 1.0 };
-        let offset = vec2(column * DAMAGE_STEP_X, row * DAMAGE_STEP_Y + 10.0) * directions;
+        let offset = vec2(0.0, (index as f32 - 2.5) * DAMAGE_STEP) * directions;
         self.rect(self.damage_center(cpu) + offset, DAMAGE_CARD_SIZE)
+    }
+
+    pub(super) fn damage_at(&self, mouse: Vec2, count: usize, cpu: bool) -> Option<usize> {
+        // Later cards are painted on top; the exposed strip still selects each
+        // earlier card. Keep this order identical to the rendering order.
+        (0..count.min(6))
+            .rev()
+            .find(|&index| self.damage_card(index, cpu).contains(mouse))
     }
 
     fn unit_at(&self, mouse: Vec2, center: Vec2) -> bool {
@@ -159,7 +174,7 @@ pub(super) fn draw_battlefield(
     game: &MatchGame,
     card_art: &HashMap<String, Texture2D>,
     layout: &BattlefieldLayout,
-    playmat: &Texture2D,
+    art: &TabletopArt,
     highlights: &BattlefieldHighlights,
     guardians: &[Card],
 ) {
@@ -180,13 +195,27 @@ pub(super) fn draw_battlefield(
             highlights.player_vanguard,
         ),
     ] {
-        draw_side_zones(side, layout, cpu, playmat);
-        if let Some((card, area)) = draw_damage(side, layout, cpu, playmat, card_art, mouse) {
+        draw_side_zones(side, layout, cpu, art, card_art);
+        if let Some((card, area)) = draw_damage(
+            side,
+            layout,
+            cpu,
+            art,
+            card_art,
+            mouse,
+            game.can_flip_damage(),
+        ) {
             damage_preview = Some((card, area, cpu));
         }
         for (slot, highlight) in rear_highlights.iter().enumerate() {
             let center = layout.rear_center(slot, cpu);
-            draw_mat_art(layout, center, REAR_ART, 1.0, cpu, playmat);
+            draw_mat_art(layout, center, REAR_ART, 0.47, cpu, &art.zones);
+            layout.label(
+                "R",
+                center + vec2(0.0, 8.0),
+                28.0,
+                Color::from_rgba(246, 209, 75, 255),
+            );
             draw_circle_unit(
                 layout,
                 center,
@@ -196,7 +225,13 @@ pub(super) fn draw_battlefield(
             );
         }
         let center = layout.vanguard_center(cpu);
-        draw_mat_art(layout, center, VANGUARD_ART, 1.0, cpu, playmat);
+        draw_mat_art(layout, center, VANGUARD_ART, 0.48, cpu, &art.zones);
+        layout.label(
+            "V",
+            center + vec2(0.0, 10.0),
+            34.0,
+            Color::from_rgba(98, 170, 255, 255),
+        );
         draw_circle_unit(
             layout,
             center,
@@ -213,7 +248,7 @@ pub(super) fn draw_battlefield(
             );
         }
     }
-    draw_guardians(layout, playmat, highlights.guardian, guardians, card_art);
+    draw_guardians(layout, &art.zones, highlights.guardian, guardians, card_art);
     if let Some((card, area, cpu)) = damage_preview {
         draw_damage_preview(layout, area, cpu, card, card_art);
     }
@@ -221,38 +256,98 @@ pub(super) fn draw_battlefield(
 
 fn draw_table_surface(layout: &BattlefieldLayout) {
     let Rect { x, y, w, h } = layout.bounds;
-    let shadow = Color::new(0.015, 0.026, 0.043, 0.62);
-    draw_rectangle(x - 4.0, y - 3.0, w + 8.0, h + 9.0, shadow);
-    draw_rectangle(x, y, w, h, PAPER);
-    draw_rectangle_lines(x, y, w, h, 1.0, EDGE);
-
-    let inset = 7.0 * layout.scale;
+    draw_rectangle(
+        x - 5.0,
+        y - 5.0,
+        w + 10.0,
+        h + 10.0,
+        Color::from_rgba(5, 17, 32, 255),
+    );
+    draw_rectangle(x, y, w, h, Color::from_rgba(5, 8, 13, 255));
+    // Ride to Victory's black arena, blue edge lighting and metallic rails.
+    for row in 0..24 {
+        let shade = 11 + ((row as f32 / 24.0 * std::f32::consts::PI).sin() * 6.0) as u8;
+        draw_rectangle(
+            x + 6.0,
+            y + row as f32 * h / 24.0,
+            w - 12.0,
+            h / 24.0 + 1.0,
+            Color::from_rgba(shade, shade + 3, shade + 7, 255),
+        );
+    }
+    for column in 0..=20 {
+        let px = x + column as f32 * w / 20.0;
+        draw_line(
+            px,
+            y + 8.0,
+            px,
+            y + h - 8.0,
+            1.0,
+            Color::from_rgba(36, 67, 92, 28),
+        );
+    }
+    for row in 0..=12 {
+        let py = y + row as f32 * h / 12.0;
+        draw_line(
+            x + 8.0,
+            py,
+            x + w - 8.0,
+            py,
+            1.0,
+            Color::from_rgba(36, 67, 92, 28),
+        );
+    }
+    draw_rectangle_lines(x, y, w, h, 3.0, Color::from_rgba(99, 127, 150, 255));
     draw_rectangle_lines(
-        x + inset,
-        y + inset,
-        w - inset * 2.0,
-        h - inset * 2.0,
-        1.0,
-        tint(EDGE, 0.52),
+        x + 5.0,
+        y + 5.0,
+        w - 10.0,
+        h - 10.0,
+        1.5,
+        Color::from_rgba(52, 176, 233, 220),
     );
+    for cpu in [false, true] {
+        for column in 0..3 {
+            let back = layout.point(layout.row_center(column, false, cpu));
+            let front = layout.point(layout.row_center(column, true, cpu));
+            draw_line(
+                back.x,
+                back.y,
+                front.x,
+                front.y,
+                2.0 * layout.scale,
+                Color::from_rgba(83, 106, 122, 95),
+            );
+        }
+    }
     let center = layout.point(layout.guardian_center());
-    let opening = 114.0 * layout.scale;
-    draw_line(
-        x + inset,
-        center.y,
-        center.x - opening,
-        center.y,
-        1.0,
-        tint(EDGE, 0.70),
-    );
-    draw_line(
-        center.x + opening,
-        center.y,
-        x + w - inset,
-        center.y,
-        1.0,
-        tint(EDGE, 0.70),
-    );
+    let opening = 122.0 * layout.scale;
+    for direction in [-1.0, 1.0] {
+        let start = center + vec2(direction * opening, 0.0);
+        let end_x = if direction < 0.0 {
+            x + 12.0
+        } else {
+            x + w - 12.0
+        };
+        draw_line(
+            start.x,
+            center.y,
+            end_x,
+            center.y,
+            2.0,
+            Color::from_rgba(100, 145, 175, 155),
+        );
+        for offset in [-6.0, 6.0] {
+            draw_line(
+                start.x + direction * 8.0,
+                center.y + offset,
+                end_x,
+                center.y + offset,
+                1.0,
+                Color::from_rgba(34, 122, 179, 100),
+            );
+        }
+    }
 }
 
 fn draw_mat_art(
@@ -264,18 +359,29 @@ fn draw_mat_art(
     playmat: &Texture2D,
 ) {
     let dest = layout.rect(center, source.size() * factor);
-    draw_texture_ex(
-        playmat,
-        dest.x,
-        dest.y,
-        PAPER,
-        DrawTextureParams {
-            dest_size: Some(dest.size()),
-            source: Some(source),
-            rotation: if cpu { std::f32::consts::PI } else { 0.0 },
-            ..Default::default()
-        },
-    );
+    let color = if source == REAR_ART {
+        Color::from_rgba(230, 172, 30, 255)
+    } else if source == VANGUARD_ART {
+        Color::from_rgba(42, 112, 235, 255)
+    } else {
+        Color::from_rgba(47, 153, 147, 255)
+    };
+    // The source is a low-opacity overlay intended for custom playmats.
+    // Layer it to keep the printed circles legible on the dark arena.
+    for _ in 0..4 {
+        draw_texture_ex(
+            playmat,
+            dest.x,
+            dest.y,
+            color,
+            DrawTextureParams {
+                dest_size: Some(dest.size()),
+                source: Some(source),
+                rotation: if cpu { std::f32::consts::PI } else { 0.0 },
+                ..Default::default()
+            },
+        );
+    }
 }
 
 fn draw_circle_unit(
@@ -313,24 +419,38 @@ fn draw_guardians(
     let center = layout.guardian_center();
     let point = layout.point(center);
     let radii = GUARDIAN_RADII * layout.scale;
-    draw_mat_art(
-        layout,
-        center + vec2(0.0, 7.5),
-        GUARDIAN_ART,
-        0.90,
-        false,
-        playmat,
-    );
+    // Use a complete ring, stretched to the Guardian Circle's oval. The old
+    // source rectangle contained only the lower arc of the printed template.
+    let dest = layout.rect(center, GUARDIAN_RADII * 2.0);
+    for _ in 0..4 {
+        draw_texture_ex(
+            playmat,
+            dest.x,
+            dest.y,
+            Color::from_rgba(76, 227, 125, 255),
+            DrawTextureParams {
+                dest_size: Some(dest.size()),
+                source: Some(REAR_ART),
+                ..Default::default()
+            },
+        );
+    }
     draw_ellipse_lines(
         point.x,
         point.y,
         radii.x,
         radii.y,
         0.0,
-        1.0,
-        tint(EDGE, 0.75),
+        1.2,
+        Color::from_rgba(81, 220, 134, 180),
     );
-    layout.label("GUARDIAN CIRCLE", center + vec2(0.0, 64.0), 12.0, INK);
+    layout.label(
+        "G",
+        center + vec2(0.0, 9.0),
+        29.0,
+        Color::from_rgba(116, 244, 151, 255),
+    );
+    layout.label("GUARDIAN CIRCLE", center + vec2(0.0, 65.0), 11.0, INK);
     if let Some(color) = highlight {
         let hovered = layout.guardian_at(mouse_position().into());
         draw_ellipse(
@@ -358,72 +478,85 @@ fn draw_damage<'a>(
     side: &'a Player,
     layout: &BattlefieldLayout,
     cpu: bool,
-    playmat: &Texture2D,
+    art: &TabletopArt,
     card_art: &HashMap<String, Texture2D>,
     mouse: Vec2,
+    can_flip: bool,
 ) -> Option<(&'a Card, Rect)> {
     let center = layout.damage_center(cpu);
     let panel = layout.rect(center, DAMAGE_POCKET);
     draw_rectangle(panel.x, panel.y, panel.w, panel.h, POCKET);
     draw_rectangle_lines(panel.x, panel.y, panel.w, panel.h, 1.0, EDGE);
-    // Keep the labels upright. Numbering still reflects the fighter's own side.
-    let label_y = if cpu { 124.0 } else { -108.0 };
+    let label_y = if cpu { 122.0 } else { -115.0 };
     layout.label(
-        &format!("DAMAGE  {} / 6", side.damage.len()),
+        &format!("DAMAGE {}/6", side.damage.len()),
         center + vec2(0.0, label_y),
-        14.0,
+        12.0,
         INK,
     );
+    // One printed pocket with an overlapping stack, not six independent slots.
+    if side.damage.is_empty() {
+        layout.label("DAMAGE", center, 11.0, tint(INK, 0.45));
+        layout.label("ZONE", center + vec2(0.0, 16.0), 11.0, tint(INK, 0.45));
+    }
+    let hovered_index = layout.damage_at(mouse, side.damage.len(), cpu);
     let mut hovered = None;
-    for index in 0..6 {
+    for (index, damage) in side.damage.iter().take(6).enumerate() {
         let bounds = layout.damage_card(index, cpu);
-        if let Some(damage) = side.damage.get(index) {
+        if damage.face_up {
+            draw_card_face(bounds, &damage.card, true, card_art);
+        } else {
+            let size = vec2(bounds.h, bounds.w);
+            let origin = bounds.center() - size * 0.5;
+            draw_texture_ex(
+                art.sleeve(cpu),
+                origin.x,
+                origin.y,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(size),
+                    rotation: std::f32::consts::FRAC_PI_2
+                        + if cpu { std::f32::consts::PI } else { 0.0 },
+                    ..Default::default()
+                },
+            );
+        }
+        if hovered_index == Some(index) {
             if damage.face_up {
-                draw_card_face(bounds, &damage.card, false, card_art);
-                if bounds.contains(mouse) {
-                    draw_rectangle_lines(
-                        bounds.x - 1.0,
-                        bounds.y - 1.0,
-                        bounds.w + 2.0,
-                        bounds.h + 2.0,
-                        2.0,
-                        INK,
-                    );
-                    hovered = Some((&damage.card, bounds));
-                }
-            } else {
-                draw_texture_ex(
-                    playmat,
-                    bounds.x,
-                    bounds.y,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(bounds.size()),
-                        source: Some(CARD_BACK_ART),
-                        ..Default::default()
-                    },
+                hovered = Some((&damage.card, bounds));
+            }
+            if !cpu && can_flip {
+                draw_rectangle_lines(
+                    bounds.x - 2.0,
+                    bounds.y - 2.0,
+                    bounds.w + 4.0,
+                    bounds.h + 4.0,
+                    2.0,
+                    Color::from_rgba(96, 214, 255, 255),
                 );
             }
-        } else {
-            draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, POCKET_INSET);
-            draw_rectangle_lines(
-                bounds.x,
-                bounds.y,
-                bounds.w,
-                bounds.h,
-                1.0,
-                tint(EDGE, 0.72),
-            );
-            draw_centered(
-                &(index + 1).to_string(),
-                bounds.x,
-                bounds.center().y + 4.0,
-                bounds.w,
-                12.0 * layout.scale,
-                tint(INK, 0.53),
+        }
+    }
+    let resources = center + vec2(0.0, if cpu { -116.0 } else { 116.0 });
+    draw_count(
+        layout,
+        resources,
+        &format!("CB {} / {}", side.face_up_damage(), side.damage.len()),
+    );
+    if !cpu && can_flip {
+        if let Some(index) = hovered_index {
+            draw_count(
+                layout,
+                center + vec2(0.0, -149.0),
+                if side.damage[index].face_up {
+                    "CLICK: COUNTER-BLAST"
+                } else {
+                    "CLICK: TURN FACE UP"
+                },
             );
         }
     }
+
     hovered
 }
 
@@ -464,37 +597,74 @@ fn draw_damage_preview(
     draw_wrapped(card.name, x, y + height + 11.0, width, 10.5, CREAM, 2);
 }
 
-fn draw_side_zones(side: &Player, layout: &BattlefieldLayout, cpu: bool, playmat: &Texture2D) {
+fn draw_sleeve(bounds: Rect, sleeve: &Texture2D, cpu: bool) {
+    draw_texture_ex(
+        sleeve,
+        bounds.x,
+        bounds.y,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(bounds.size()),
+            rotation: if cpu { std::f32::consts::PI } else { 0.0 },
+            ..Default::default()
+        },
+    );
+}
+
+fn draw_side_zones(
+    side: &Player,
+    layout: &BattlefieldLayout,
+    cpu: bool,
+    art: &TabletopArt,
+    card_art: &HashMap<String, Texture2D>,
+) {
     let player_x = layout.width * 0.90;
-    let deck = layout.side_point(vec2(player_x, 634.0), cpu);
-    let drop = layout.side_point(vec2(player_x, 494.0), cpu);
-    let trigger = layout.side_point(vec2(layout.width * 0.10, 387.0), cpu);
-    draw_mat_art(layout, deck, DECK_ART, 0.84, cpu, playmat);
-    draw_mat_art(layout, drop, DROP_ART, 0.84, cpu, playmat);
-    draw_mat_art(layout, trigger, TRIGGER_ART, 0.72, cpu, playmat);
+    let deck = layout.side_point(vec2(player_x, 511.0), cpu);
+    let drop = layout.side_point(vec2(player_x, 641.0), cpu);
+    let trigger = layout.side_point(vec2(player_x, 405.0), cpu);
+    for center in [deck, drop, trigger] {
+        let bounds = layout.rect(center, vec2(73.0, 100.0));
+        draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, POCKET);
+        draw_rectangle_lines(bounds.x, bounds.y, bounds.w, bounds.h, 1.0, EDGE);
+    }
+    if !side.deck.is_empty() {
+        draw_sleeve(layout.rect(deck, vec2(65.0, 94.0)), art.sleeve(cpu), cpu);
+    }
+    if let Some(card) = side.drop_zone.last() {
+        draw_card_face(layout.rect(drop, vec2(65.0, 94.0)), card, false, card_art);
+    }
     draw_count(
         layout,
-        deck + vec2(0.0, 58.0),
+        deck + vec2(0.0, if cpu { -58.0 } else { 58.0 }),
         &format!("DECK  {}", side.deck.len()),
     );
     draw_count(
         layout,
-        drop + vec2(0.0, 58.0),
+        drop + vec2(0.0, if cpu { -58.0 } else { 58.0 }),
         &format!("DROP  {}", side.drop_zone.len()),
     );
-    layout.label("TRIGGER", trigger + vec2(0.0, 52.0), 11.0, INK);
+    layout.label(
+        "TRIGGER",
+        trigger + vec2(0.0, if cpu { -54.0 } else { 54.0 }),
+        10.0,
+        INK,
+    );
     if let Some(check) = side.last_check.as_deref() {
-        let bounds = layout.rect(trigger, vec2(73.0, 62.0));
-        draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, tint(INK, 0.90));
-        draw_wrapped(
-            check,
-            bounds.x + 3.0,
-            bounds.y + 13.0 * layout.scale,
-            (bounds.w - 6.0).max(1.0),
-            (10.0 * layout.scale).max(8.0),
-            CREAM,
-            4,
-        );
+        let bounds = layout.rect(trigger, vec2(58.0, 84.0));
+        let name = super::checked_card_name(check);
+        if let Some(texture) = card_art.get(&super::normalize_card_name(name)) {
+            draw_sleeve(bounds, texture, cpu);
+        } else {
+            draw_wrapped(
+                check,
+                bounds.x + 3.0,
+                bounds.y + 12.0 * layout.scale,
+                (bounds.w - 6.0).max(1.0),
+                (10.0 * layout.scale).max(8.0),
+                INK,
+                4,
+            );
+        }
     }
 }
 
@@ -508,7 +678,7 @@ fn draw_count(layout: &BattlefieldLayout, center: Vec2, text: &str) {
         point.y - height * 0.5,
         width,
         height,
-        INK,
+        Color::from_rgba(9, 18, 31, 245),
     );
     draw_centered(
         text,
@@ -578,18 +748,52 @@ mod tests {
     }
 
     #[test]
-    fn all_six_damage_cards_fit_and_remain_fully_visible() {
-        let layout = BattlefieldLayout::new(Rect::new(0.0, 0.0, MIN_WIDTH, TABLE_HEIGHT));
-        for cpu in [true, false] {
-            let pocket = layout.rect(layout.damage_center(cpu), DAMAGE_POCKET);
-            for index in 0..6 {
-                let card = layout.damage_card(index, cpu);
-                assert!(pocket.contains(vec2(card.left(), card.top())));
-                assert!(pocket.contains(vec2(card.right(), card.bottom())));
-                for other in index + 1..6 {
-                    assert!(!card.overlaps(&layout.damage_card(other, cpu)));
+    fn overlapping_damage_stays_in_one_pocket_and_each_exposed_strip_is_clickable() {
+        for size in [
+            vec2(MIN_WIDTH, TABLE_HEIGHT),
+            vec2(1330.0, 662.0),
+            vec2(744.0, 440.0),
+        ] {
+            let layout = BattlefieldLayout::new(Rect::new(0.0, 0.0, size.x, size.y));
+            for cpu in [true, false] {
+                let pocket = layout.rect(layout.damage_center(cpu), DAMAGE_POCKET);
+                for count in 1..=6 {
+                    for index in 0..count {
+                        let card = layout.damage_card(index, cpu);
+                        assert!(card.w > card.h, "damage cards must stay sideways");
+                        let strip = vec2(
+                            card.center().x,
+                            if cpu {
+                                card.bottom() - DAMAGE_STEP * layout.scale * 0.5
+                            } else {
+                                card.top() + DAMAGE_STEP * layout.scale * 0.5
+                            },
+                        );
+                        assert_eq!(layout.damage_at(strip, count, cpu), Some(index));
+                        assert_eq!(layout.damage_at(strip, 0, cpu), None);
+                        assert_eq!(layout.damage_at(strip, count, !cpu), None);
+                        assert!(pocket.contains(card.point()));
+                        assert!(pocket.contains(vec2(card.right(), card.bottom())));
+                        assert!(layout.bounds.contains(card.point()));
+                        assert!(layout.bounds.contains(vec2(card.right(), card.bottom())));
+                        if index + 1 < count {
+                            assert!(card.overlaps(&layout.damage_card(index + 1, cpu)));
+                        }
+                    }
+                    let top = layout.damage_card(count - 1, cpu);
+                    assert_eq!(layout.damage_at(top.center(), count, cpu), Some(count - 1));
                 }
             }
         }
+    }
+
+    #[test]
+    fn guardian_accepts_cards_on_both_halves_of_the_complete_circle() {
+        let layout = BattlefieldLayout::new(Rect::new(0.0, 0.0, MIN_WIDTH, TABLE_HEIGHT));
+        let center = layout.guardian_center();
+        for y in [-35.0, 35.0] {
+            assert!(layout.guardian_at(layout.point(center + vec2(0.0, y))));
+        }
+        assert!(!layout.guardian_at(layout.point(center + vec2(0.0, 60.0))));
     }
 }

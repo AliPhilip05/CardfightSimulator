@@ -86,7 +86,13 @@ pub(super) fn draw_match_shell(layout: &MatchLayout) {
     );
 }
 
-pub(super) fn draw_match_hud(game: &MatchGame, layout: &MatchLayout, log_open: bool) -> bool {
+pub(super) fn draw_match_hud(
+    game: &MatchGame,
+    layout: &MatchLayout,
+    log_open: bool,
+    aichi: &Texture2D,
+    kai: &Texture2D,
+) -> bool {
     let header = layout.header;
     let compact = header.h > 70.0;
     let phase_area = if compact {
@@ -101,12 +107,24 @@ pub(super) fn draw_match_hud(game: &MatchGame, layout: &MatchLayout, log_open: b
     };
 
     let player_y = if compact { 13.0 } else { 19.0 };
+    let portrait_size = 40.0;
+    draw_texture_ex(
+        aichi,
+        header.x + 5.0,
+        player_y - 5.0,
+        WHITE,
+        DrawTextureParams {
+            dest_size: Some(vec2(portrait_size, portrait_size)),
+            ..Default::default()
+        },
+    );
+    let player_text_x = header.x + 52.0;
     draw_rectangle(header.x, player_y, 3.0, 31.0, CYAN);
     let title_size = if column_width < 220.0 { 14 } else { 17 };
-    let title = fit_caption(&game.chapter.title, column_width - 12.0, title_size);
+    let title = fit_caption(&game.chapter.title, column_width - 58.0, title_size);
     draw_text(
         &title,
-        header.x + 12.0,
+        player_text_x,
         player_y + 11.0,
         title_size as f32,
         CREAM,
@@ -120,14 +138,28 @@ pub(super) fn draw_match_hud(game: &MatchGame, layout: &MatchLayout, log_open: b
             "Your turn"
         }
     );
-    let line = fit_caption(&line, column_width - 12.0, 12);
-    draw_text(&line, header.x + 12.0, player_y + 28.0, 12.0, MUTED);
+    let line = fit_caption(&line, column_width - 58.0, 12);
+    draw_text(&line, player_text_x, player_y + 28.0, 12.0, MUTED);
 
-    let rival_right = header.right() - 12.0;
+    let show_kai = game.cpu.name.contains("Kai");
+    if show_kai {
+        draw_texture_ex(
+            kai,
+            header.right() - 45.0,
+            player_y - 5.0,
+            WHITE,
+            DrawTextureParams {
+                dest_size: Some(vec2(portrait_size, portrait_size)),
+                ..Default::default()
+            },
+        );
+    }
+    let rival_right = header.right() - if show_kai { 52.0 } else { 12.0 };
+    let rival_width = column_width - if show_kai { 58.0 } else { 12.0 };
     draw_rectangle(header.right() - 3.0, player_y, 3.0, 31.0, RED);
-    let rival_name = fit_caption(&game.cpu.name, column_width - 12.0, title_size);
+    let rival_name = fit_caption(&game.cpu.name, rival_width, title_size);
     draw_right(&rival_name, rival_right, player_y + 11.0, title_size, CREAM);
-    let opponent_counts = fit_caption(&fighter_counts(&game.cpu), column_width - 12.0, 12);
+    let opponent_counts = fit_caption(&fighter_counts(&game.cpu), rival_width, 12);
     draw_right(&opponent_counts, rival_right, player_y + 28.0, 12, MUTED);
 
     let turn_width = if compact { 47.0 } else { 54.0 };
