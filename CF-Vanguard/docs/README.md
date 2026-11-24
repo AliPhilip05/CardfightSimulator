@@ -5,6 +5,7 @@ The [project README](../README.md) covers installation and controls. These docum
 - [Architecture](architecture.md): startup, screen navigation, asset ownership, battle flow, and the conventions that keep drawing and input aligned.
 - [Function reference](functions.md): every named Rust function and Python asset-tool function, including private helpers and tests, grouped by source file.
 - [Research](../RESEARCH.md): era scope, rules references, and the publisher screenshots used for the field's presentation.
+- [VangPro research](research/vangpro-research.md): public-source and release-package analysis, versioned feature evidence, and an implementation roadmap for this simulator.
 - [Asset provenance](../assets/README.md): downloaded artwork, generated landscape, font license, refresh commands, and checksums.
 
 ## Current presentation

@@ -32,6 +32,8 @@ Story Mode follows a six chapter route through the Card Capital introduction, to
 
 See the [documentation index](docs/README.md), [architecture and screen flow](docs/architecture.md), and [complete function reference](docs/functions.md). The reference explains every named Rust function and asset-script function, including private helpers and tests.
 
+The [VangPro research report](docs/research/vangpro-research.md) compares public gameplay materials and release-package observations with this codebase, then proposes a staged implementation roadmap.
+
 ## Project layout
 
 - `src/main.rs` configures and runs the desktop window.

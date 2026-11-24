@@ -24,6 +24,7 @@ Press **Enter** or click the title screen to open the menu. Matches load their d
 - [Architecture and screen/battle flow](CF-Vanguard/docs/architecture.md)
 - [Every function and its responsibility](CF-Vanguard/docs/functions.md)
 - [Historical and visual research](CF-Vanguard/RESEARCH.md)
+- [VangPro research and implementation roadmap](CF-Vanguard/docs/research/vangpro-research.md)
 - [Artwork sources and licenses](CF-Vanguard/assets/README.md)
 
 ## Check
