@@ -47,7 +47,7 @@ impl Card {
             clan,
             grade: 0,
             power: 5000,
-            shield: 10000,
+            shield: if kind == Trigger::Draw { 5000 } else { 10000 },
             trigger: kind,
             break_ride: false,
             limit_break: false,
@@ -64,6 +64,7 @@ pub struct Unit {
     pub card: Card,
     pub rested: bool,
     pub power_bonus: i32,
+    pub critical_bonus: i32,
     pub locked: bool,
 }
 
@@ -73,8 +74,13 @@ impl Unit {
             card,
             rested: false,
             power_bonus: 0,
+            critical_bonus: 0,
             locked: false,
         }
+    }
+
+    pub fn critical(&self) -> i32 {
+        1 + self.critical_bonus
     }
 
     pub fn power(&self) -> i32 {
@@ -121,7 +127,7 @@ impl Player {
 
     pub fn draw(&mut self) -> Option<Card> {
         let card = self.deck.pop();
-        self.deck_out = card.is_none();
+        self.deck_out = self.deck.is_empty();
         card
     }
 

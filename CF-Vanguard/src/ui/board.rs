@@ -11,17 +11,17 @@ use std::collections::HashMap;
 const MIN_WIDTH: f32 = 1100.0;
 const TABLE_HEIGHT: f32 = 720.0;
 const CENTER_Y: f32 = TABLE_HEIGHT * 0.5;
-const CPU_BACK_Y: f32 = 78.0;
-const CPU_FRONT_Y: f32 = 221.0;
+const CPU_BACK_Y: f32 = 76.0;
+const CPU_FRONT_Y: f32 = 228.0;
 const COLUMN_FRACTIONS: [f32; 3] = [0.32, 0.50, 0.68];
-const CIRCLE_RADIUS: f32 = 65.0;
-const CARD_SIZE: Vec2 = Vec2::new(75.0, 108.0);
+const CIRCLE_RADIUS: f32 = 75.0;
+const CARD_SIZE: Vec2 = Vec2::new(96.0, 139.0);
 const GUARDIAN_RADII: Vec2 = Vec2::new(110.0, 50.0);
-const DAMAGE_POCKET: Vec2 = Vec2::new(132.0, 250.0);
+const DAMAGE_POCKET: Vec2 = Vec2::new(180.0, 282.0);
 const DAMAGE_CARD_SIZE: Vec2 = Vec2::new(CARD_SIZE.y, CARD_SIZE.x);
 const DAMAGE_STEP: f32 = 27.0;
-const EDGE: Color = Color::from_rgba(77, 148, 193, 255);
-const POCKET: Color = Color::from_rgba(14, 23, 34, 255);
+const EDGE: Color = Color::from_rgba(150, 164, 165, 255);
+const POCKET: Color = Color::from_rgba(7, 16, 20, 90);
 const INK: Color = Color::from_rgba(212, 231, 243, 255);
 
 // Transparent circle art from the downloaded community template. Auxiliary
@@ -52,6 +52,7 @@ pub(super) struct BattlefieldHighlights {
     pub(super) player_vanguard: Option<Color>,
     pub(super) cpu_vanguard: Option<Color>,
     pub(super) guardian: Option<Color>,
+    pub(super) player_damage: bool,
 }
 
 pub(super) struct BattlefieldLayout {
@@ -79,17 +80,22 @@ impl BattlefieldLayout {
     }
 
     fn point(&self, local: Vec2) -> Vec2 {
-        vec2(self.bounds.x, self.bounds.y) + local * self.scale
+        let perspective = 0.86 + 0.14 * (local.y / TABLE_HEIGHT);
+        vec2(self.bounds.x, self.bounds.y)
+            + vec2(
+                self.width * 0.5 + (local.x - self.width * 0.5) * perspective,
+                local.y,
+            ) * self.scale
+    }
+
+    fn scale_at(&self, center: Vec2) -> f32 {
+        self.scale * (0.86 + 0.14 * (center.y / TABLE_HEIGHT))
     }
 
     fn rect(&self, center: Vec2, size: Vec2) -> Rect {
-        let top_left = self.point(center - size * 0.5);
-        Rect::new(
-            top_left.x,
-            top_left.y,
-            size.x * self.scale,
-            size.y * self.scale,
-        )
+        let size = size * self.scale_at(center);
+        let origin = self.point(center) - size * 0.5;
+        Rect::new(origin.x, origin.y, size.x, size.y)
     }
 
     fn side_point(&self, player_point: Vec2, cpu: bool) -> Vec2 {
@@ -121,6 +127,13 @@ impl BattlefieldLayout {
         vec2(self.width * 0.5, CENTER_Y)
     }
 
+    pub(super) fn deck_rect(&self, cpu: bool) -> Rect {
+        self.rect(
+            self.side_point(vec2(self.width * 0.90, 511.0), cpu),
+            vec2(76.0, 110.0),
+        )
+    }
+
     fn damage_center(&self, cpu: bool) -> Vec2 {
         self.side_point(vec2(self.width * 0.10, 580.0), cpu)
     }
@@ -140,7 +153,7 @@ impl BattlefieldLayout {
     }
 
     fn unit_at(&self, mouse: Vec2, center: Vec2) -> bool {
-        self.point(center).distance(mouse) <= CIRCLE_RADIUS * self.scale
+        self.point(center).distance(mouse) <= CIRCLE_RADIUS * self.scale_at(center)
             || self.rect(center, CARD_SIZE).contains(mouse)
     }
 
@@ -177,8 +190,10 @@ pub(super) fn draw_battlefield(
     art: &TabletopArt,
     highlights: &BattlefieldHighlights,
     guardians: &[Card],
+    stand_animation: Option<(bool, f32)>,
 ) {
     draw_table_surface(layout);
+    draw_attack_path(game, layout);
     let mouse = mouse_position().into();
     let mut damage_preview = None;
     for (cpu, side, rear_highlights, vanguard_highlight) in [
@@ -195,7 +210,9 @@ pub(super) fn draw_battlefield(
             highlights.player_vanguard,
         ),
     ] {
-        draw_side_zones(side, layout, cpu, art, card_art);
+        let drawing = game.stage() == Some(crate::game::engine::TurnStage::Draw)
+            && (game.phase == crate::game::engine::Phase::Cpu) == cpu;
+        draw_side_zones(side, layout, cpu, art, card_art, drawing);
         if let Some((card, area)) = draw_damage(
             side,
             layout,
@@ -204,12 +221,13 @@ pub(super) fn draw_battlefield(
             card_art,
             mouse,
             game.can_flip_damage(),
+            !cpu && highlights.player_damage,
         ) {
             damage_preview = Some((card, area, cpu));
         }
         for (slot, highlight) in rear_highlights.iter().enumerate() {
             let center = layout.rear_center(slot, cpu);
-            draw_mat_art(layout, center, REAR_ART, 0.47, cpu, &art.zones);
+            draw_mat_art(layout, center, REAR_ART, 0.54, cpu, &art.zones);
             layout.label(
                 "R",
                 center + vec2(0.0, 8.0),
@@ -222,6 +240,9 @@ pub(super) fn draw_battlefield(
                 side.rear[slot].as_ref(),
                 *highlight,
                 card_art,
+                stand_animation
+                    .filter(|(side, _)| *side == cpu)
+                    .map_or(0.0, |(_, progress)| progress),
             );
         }
         let center = layout.vanguard_center(cpu);
@@ -238,6 +259,9 @@ pub(super) fn draw_battlefield(
             side.vanguard.as_ref(),
             vanguard_highlight,
             card_art,
+            stand_animation
+                .filter(|(side, _)| *side == cpu)
+                .map_or(0.0, |(_, progress)| progress),
         );
         if !side.soul.is_empty() {
             let direction = if cpu { -1.0 } else { 1.0 };
@@ -255,99 +279,74 @@ pub(super) fn draw_battlefield(
 }
 
 fn draw_table_surface(layout: &BattlefieldLayout) {
-    let Rect { x, y, w, h } = layout.bounds;
-    draw_rectangle(
-        x - 5.0,
-        y - 5.0,
-        w + 10.0,
-        h + 10.0,
-        Color::from_rgba(5, 17, 32, 255),
+    let corners = [
+        vec2(0.0, 0.0),
+        vec2(layout.width, 0.0),
+        vec2(layout.width, TABLE_HEIGHT),
+        vec2(0.0, TABLE_HEIGHT),
+    ]
+    .map(|p| layout.point(p));
+    draw_triangle(
+        corners[0],
+        corners[1],
+        corners[2],
+        Color::from_rgba(2, 8, 9, 245),
     );
-    draw_rectangle(x, y, w, h, Color::from_rgba(5, 8, 13, 255));
-    // Ride to Victory's black arena, blue edge lighting and metallic rails.
-    for row in 0..24 {
-        let shade = 11 + ((row as f32 / 24.0 * std::f32::consts::PI).sin() * 6.0) as u8;
-        draw_rectangle(
-            x + 6.0,
-            y + row as f32 * h / 24.0,
-            w - 12.0,
-            h / 24.0 + 1.0,
-            Color::from_rgba(shade, shade + 3, shade + 7, 255),
-        );
-    }
-    for column in 0..=20 {
-        let px = x + column as f32 * w / 20.0;
-        draw_line(
-            px,
-            y + 8.0,
-            px,
-            y + h - 8.0,
-            1.0,
-            Color::from_rgba(36, 67, 92, 28),
-        );
-    }
-    for row in 0..=12 {
-        let py = y + row as f32 * h / 12.0;
-        draw_line(
-            x + 8.0,
-            py,
-            x + w - 8.0,
-            py,
-            1.0,
-            Color::from_rgba(36, 67, 92, 28),
-        );
-    }
-    draw_rectangle_lines(x, y, w, h, 3.0, Color::from_rgba(99, 127, 150, 255));
-    draw_rectangle_lines(
-        x + 5.0,
-        y + 5.0,
-        w - 10.0,
-        h - 10.0,
-        1.5,
-        Color::from_rgba(52, 176, 233, 220),
+    draw_triangle(
+        corners[0],
+        corners[2],
+        corners[3],
+        Color::from_rgba(2, 8, 9, 245),
     );
-    for cpu in [false, true] {
-        for column in 0..3 {
-            let back = layout.point(layout.row_center(column, false, cpu));
-            let front = layout.point(layout.row_center(column, true, cpu));
-            draw_line(
-                back.x,
-                back.y,
-                front.x,
-                front.y,
-                2.0 * layout.scale,
-                Color::from_rgba(83, 106, 122, 95),
+    for row in 0..16 {
+        for col in 0..(layout.width / 52.0) as usize {
+            let local = vec2(
+                26.0 + col as f32 * 52.0 + if row % 2 == 0 { 0.0 } else { 26.0 },
+                24.0 + row as f32 * 44.0,
+            );
+            if local.x > layout.width - 25.0 {
+                continue;
+            }
+            let p = layout.point(local);
+            draw_poly(
+                p.x,
+                p.y,
+                6,
+                25.0 * layout.scale_at(local),
+                30.0,
+                Color::from_rgba(11, 28, 22, 145),
             );
         }
     }
-    let center = layout.point(layout.guardian_center());
-    let opening = 122.0 * layout.scale;
-    for direction in [-1.0, 1.0] {
-        let start = center + vec2(direction * opening, 0.0);
-        let end_x = if direction < 0.0 {
-            x + 12.0
-        } else {
-            x + w - 12.0
-        };
-        draw_line(
-            start.x,
-            center.y,
-            end_x,
-            center.y,
-            2.0,
-            Color::from_rgba(100, 145, 175, 155),
-        );
-        for offset in [-6.0, 6.0] {
-            draw_line(
-                start.x + direction * 8.0,
-                center.y + offset,
-                end_x,
-                center.y + offset,
-                1.0,
-                Color::from_rgba(34, 122, 179, 100),
-            );
-        }
+    for i in 0..4 {
+        let a = corners[i];
+        let b = corners[(i + 1) % 4];
+        draw_line(a.x, a.y, b.x, b.y, 2.0, Color::from_rgba(64, 99, 106, 170));
     }
+}
+
+fn draw_attack_path(game: &MatchGame, layout: &BattlefieldLayout) {
+    let Some(attack) = &game.pending_attack else {
+        return;
+    };
+    let center = |unit: crate::game::engine::AttackUnit, cpu| match unit {
+        crate::game::engine::AttackUnit::Vanguard => layout.vanguard_center(cpu),
+        crate::game::engine::AttackUnit::Rear(slot) => layout.rear_center(slot, cpu),
+    };
+    let from = layout.point(center(attack.attacker, attack.cpu_attacking));
+    let target = layout.point(center(attack.target, !attack.cpu_attacking));
+    let direction = (target - from).normalize_or_zero();
+    let start = from + direction * 78.0 * layout.scale;
+    let end = target - direction * 80.0 * layout.scale;
+    let color = Color::from_rgba(255, 218, 109, 220);
+    draw_line(start.x, start.y, end.x, end.y, 3.0 * layout.scale, color);
+    let side = vec2(-direction.y, direction.x) * 9.0 * layout.scale;
+    draw_triangle(
+        end,
+        end - direction * 20.0 * layout.scale + side,
+        end - direction * 20.0 * layout.scale - side,
+        color,
+    );
 }
 
 fn draw_mat_art(
@@ -390,10 +389,11 @@ fn draw_circle_unit(
     unit: Option<&Unit>,
     highlight: Option<Color>,
     card_art: &HashMap<String, Texture2D>,
+    stand_progress: f32,
 ) {
     if let Some(color) = highlight {
         let point = layout.point(center);
-        let radius = CIRCLE_RADIUS * layout.scale;
+        let radius = CIRCLE_RADIUS * layout.scale_at(center);
         let hovered = layout.unit_at(mouse_position().into(), center);
         draw_circle(
             point.x,
@@ -405,7 +405,12 @@ fn draw_circle_unit(
         draw_circle_lines(point.x, point.y, radius + 1.0, 1.7, color);
     }
     if let Some(unit) = unit {
-        draw_field_unit(layout.rect(center, CARD_SIZE), unit, card_art);
+        draw_field_unit(
+            layout.rect(center, CARD_SIZE),
+            unit,
+            card_art,
+            stand_progress,
+        );
     }
 }
 
@@ -482,12 +487,12 @@ fn draw_damage<'a>(
     card_art: &HashMap<String, Texture2D>,
     mouse: Vec2,
     can_flip: bool,
+    heal_choice: bool,
 ) -> Option<(&'a Card, Rect)> {
     let center = layout.damage_center(cpu);
     let panel = layout.rect(center, DAMAGE_POCKET);
-    draw_rectangle(panel.x, panel.y, panel.w, panel.h, POCKET);
-    draw_rectangle_lines(panel.x, panel.y, panel.w, panel.h, 1.0, EDGE);
-    let label_y = if cpu { 122.0 } else { -115.0 };
+    draw_zone_frame(panel);
+    let label_y = if cpu { 149.0 } else { -149.0 };
     layout.label(
         &format!("DAMAGE {}/6", side.damage.len()),
         center + vec2(0.0, label_y),
@@ -525,7 +530,7 @@ fn draw_damage<'a>(
             if damage.face_up {
                 hovered = Some((&damage.card, bounds));
             }
-            if !cpu && can_flip {
+            if !cpu && (can_flip || heal_choice) {
                 draw_rectangle_lines(
                     bounds.x - 2.0,
                     bounds.y - 2.0,
@@ -537,18 +542,20 @@ fn draw_damage<'a>(
             }
         }
     }
-    let resources = center + vec2(0.0, if cpu { -116.0 } else { 116.0 });
+    let resources = center + vec2(0.0, if cpu { -149.0 } else { 149.0 });
     draw_count(
         layout,
         resources,
         &format!("CB {} / {}", side.face_up_damage(), side.damage.len()),
     );
-    if !cpu && can_flip {
+    if !cpu && (can_flip || heal_choice) {
         if let Some(index) = hovered_index {
             draw_count(
                 layout,
-                center + vec2(0.0, -149.0),
-                if side.damage[index].face_up {
+                center + vec2(0.0, -172.0),
+                if heal_choice {
+                    "CLICK: HEAL DAMAGE"
+                } else if side.damage[index].face_up {
                     "CLICK: COUNTER-BLAST"
                 } else {
                     "CLICK: TURN FACE UP"
@@ -617,43 +624,65 @@ fn draw_side_zones(
     cpu: bool,
     art: &TabletopArt,
     card_art: &HashMap<String, Texture2D>,
+    drawing: bool,
 ) {
     let player_x = layout.width * 0.90;
     let deck = layout.side_point(vec2(player_x, 511.0), cpu);
     let drop = layout.side_point(vec2(player_x, 641.0), cpu);
-    let trigger = layout.side_point(vec2(player_x, 405.0), cpu);
+    let trigger = layout.side_point(vec2(player_x, 350.0), cpu);
     for center in [deck, drop, trigger] {
-        let bounds = layout.rect(center, vec2(73.0, 100.0));
-        draw_rectangle(bounds.x, bounds.y, bounds.w, bounds.h, POCKET);
-        draw_rectangle_lines(bounds.x, bounds.y, bounds.w, bounds.h, 1.0, EDGE);
+        let bounds = layout.rect(
+            center,
+            if center == trigger {
+                vec2(148.0, 98.0)
+            } else {
+                vec2(84.0, 122.0)
+            },
+        );
+        draw_zone_frame(bounds);
     }
-    if !side.deck.is_empty() {
-        draw_sleeve(layout.rect(deck, vec2(65.0, 94.0)), art.sleeve(cpu), cpu);
+    if side.deck.len() > usize::from(drawing) {
+        draw_sleeve(layout.deck_rect(cpu), art.sleeve(cpu), cpu);
     }
     if let Some(card) = side.drop_zone.last() {
-        draw_card_face(layout.rect(drop, vec2(65.0, 94.0)), card, false, card_art);
+        draw_card_face(layout.rect(drop, vec2(76.0, 110.0)), card, false, card_art);
     }
     draw_count(
         layout,
-        deck + vec2(0.0, if cpu { -58.0 } else { 58.0 }),
+        deck + vec2(0.0, if cpu { -72.0 } else { 72.0 }),
         &format!("DECK  {}", side.deck.len()),
     );
     draw_count(
         layout,
-        drop + vec2(0.0, if cpu { -58.0 } else { 58.0 }),
+        drop + vec2(0.0, if cpu { -72.0 } else { 72.0 }),
         &format!("DROP  {}", side.drop_zone.len()),
     );
-    layout.label(
-        "TRIGGER",
-        trigger + vec2(0.0, if cpu { -54.0 } else { 54.0 }),
-        10.0,
-        INK,
-    );
+    if side.last_check.is_none() {
+        layout.label(
+            "TRIGGER CHECK",
+            trigger - vec2(0.0, 2.0),
+            12.0,
+            tint(INK, 0.65),
+        );
+        layout.label("ZONE", trigger + vec2(0.0, 14.0), 12.0, tint(INK, 0.65));
+    }
     if let Some(check) = side.last_check.as_deref() {
-        let bounds = layout.rect(trigger, vec2(58.0, 84.0));
+        let bounds = layout.rect(trigger, vec2(126.0, 87.0));
         let name = super::checked_card_name(check);
         if let Some(texture) = card_art.get(&super::normalize_card_name(name)) {
-            draw_sleeve(bounds, texture, cpu);
+            let size = vec2(bounds.h, bounds.w);
+            let origin = bounds.center() - size * 0.5;
+            draw_texture_ex(
+                texture,
+                origin.x,
+                origin.y,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(size),
+                    rotation: std::f32::consts::FRAC_PI_2,
+                    ..Default::default()
+                },
+            );
         } else {
             draw_wrapped(
                 check,
@@ -665,6 +694,26 @@ fn draw_side_zones(
                 4,
             );
         }
+    }
+}
+
+/// A translucent printed zone with clipped corners and a metallic double border.
+fn draw_zone_frame(r: Rect) {
+    let cut = (r.w * 0.09).min(10.0);
+    let points = [
+        vec2(r.x + cut, r.y),
+        vec2(r.right(), r.y),
+        vec2(r.right(), r.bottom() - cut),
+        vec2(r.right() - cut, r.bottom()),
+        vec2(r.x, r.bottom()),
+        vec2(r.x, r.y + cut),
+    ];
+    for i in 0..6 {
+        draw_triangle(r.center(), points[i], points[(i + 1) % 6], POCKET);
+        let a = points[i];
+        let b = points[(i + 1) % 6];
+        draw_line(a.x, a.y, b.x, b.y, 3.5, Color::from_rgba(14, 20, 24, 240));
+        draw_line(a.x, a.y, b.x, b.y, 1.4, EDGE);
     }
 }
 

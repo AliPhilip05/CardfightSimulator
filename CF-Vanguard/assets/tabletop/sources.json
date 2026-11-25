@@ -126,5 +126,261 @@
       255
     ],
     "processing": "psd"
+  },
+  {
+    "file": "fighters/morikawa-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-09.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/katsumi-morikawa/",
+    "download_sha256": "b761a51dd85b5b4c909c3fbefcd240e8308e1f5cb41c87f4c7347dd36f05caf0",
+    "png_sha256": "b761a51dd85b5b4c909c3fbefcd240e8308e1f5cb41c87f4c7347dd36f05caf0",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/morikawa-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-09.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/katsumi-morikawa/",
+    "download_sha256": "3d76ec1fca8749b0af4a86d8615f16413fd51c8c10f2692af7c8b6f3461d776c",
+    "png_sha256": "3d76ec1fca8749b0af4a86d8615f16413fd51c8c10f2692af7c8b6f3461d776c",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/kamui-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-04.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/kamui-katsuragi/",
+    "download_sha256": "05b576f4bed66be4d9dc1f03443aa708dc8a855342461c2ea6ced7d0e78bfa5b",
+    "png_sha256": "05b576f4bed66be4d9dc1f03443aa708dc8a855342461c2ea6ced7d0e78bfa5b",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/kamui-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-04.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/kamui-katsuragi/",
+    "download_sha256": "c49ebbe06851ede7642a61653a686cf956255b063dd3953162865b42d93161dc",
+    "png_sha256": "c49ebbe06851ede7642a61653a686cf956255b063dd3953162865b42d93161dc",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/misaki-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-03.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/misaki-tokura/",
+    "download_sha256": "c98842c3f589079d0f890134db7ff229c591b832737e5e9363cd68223440a069",
+    "png_sha256": "c98842c3f589079d0f890134db7ff229c591b832737e5e9363cd68223440a069",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/misaki-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-03.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/misaki-tokura/",
+    "download_sha256": "3d47f20027f7a2bbafe5fbd27885b2993c725da2c3a7cef8fc913616cb8e51ef",
+    "png_sha256": "3d47f20027f7a2bbafe5fbd27885b2993c725da2c3a7cef8fc913616cb8e51ef",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/ren-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-05.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/ren-suzugamori/",
+    "download_sha256": "0327e171ef12b08c62fa0bce46df36b70e6ca320188816963de02b3ed133f22d",
+    "png_sha256": "0327e171ef12b08c62fa0bce46df36b70e6ca320188816963de02b3ed133f22d",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/ren-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-05.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/ren-suzugamori/",
+    "download_sha256": "267f320da2003ce7e2ab3e87ed30e216c4190645fe5177efccb5b12157e3e0a1",
+    "png_sha256": "267f320da2003ce7e2ab3e87ed30e216c4190645fe5177efccb5b12157e3e0a1",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/asaka-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-06.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/asaka-narumi/",
+    "download_sha256": "d3e95322591c3e5772dc71290d6fd35d44bd7c23d5a20e3c15e33698582d7954",
+    "png_sha256": "d3e95322591c3e5772dc71290d6fd35d44bd7c23d5a20e3c15e33698582d7954",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/asaka-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-06.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/asaka-narumi/",
+    "download_sha256": "90f1cdd855771fc720826931fafddbf01a49f7f7c6fbbbff133f7b5bdb5cba7b",
+    "png_sha256": "90f1cdd855771fc720826931fafddbf01a49f7f7c6fbbbff133f7b5bdb5cba7b",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/leon-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-16.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/leon-souryu/",
+    "download_sha256": "c90c9e901be70cef5f03c9361b1e1409b4fb621870ca331f2dfc44f143d66fe8",
+    "png_sha256": "c90c9e901be70cef5f03c9361b1e1409b4fb621870ca331f2dfc44f143d66fe8",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/leon-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-16.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/leon-souryu/",
+    "download_sha256": "c883135b7e379456c4d783f7edae378097089b5f8fa044e6697eff7eba995424",
+    "png_sha256": "c883135b7e379456c4d783f7edae378097089b5f8fa044e6697eff7eba995424",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/naoki-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-b02.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/naoki-ishida-hs/",
+    "download_sha256": "64cd17ba927be014e77b4808ccd4b5dafecfe3b02a9b413a7e2ba0f40759264f",
+    "png_sha256": "64cd17ba927be014e77b4808ccd4b5dafecfe3b02a9b413a7e2ba0f40759264f",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/naoki-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-b02.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/naoki-ishida-hs/",
+    "download_sha256": "b244d13f0029253a3ba3979e36e5344e8fc8945e0f3ea0785b3a7f1ec1cc05a7",
+    "png_sha256": "b244d13f0029253a3ba3979e36e5344e8fc8945e0f3ea0785b3a7f1ec1cc05a7",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/takuto-standing.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-b16.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/takuto-tatsunagi-hs/",
+    "download_sha256": "03498af96c09b6dba3d1efe65f37ff7eb98cf40f71210c3dff6c040a2ed7e0b6",
+    "png_sha256": "03498af96c09b6dba3d1efe65f37ff7eb98cf40f71210c3dff6c040a2ed7e0b6",
+    "size": [
+      544,
+      624
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
+  },
+  {
+    "file": "fighters/takuto-icon.png",
+    "source_url": "https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-b16.png",
+    "source_page": "https://anime.cf-vanguard.com/vg2018-if/characters/takuto-tatsunagi-hs/",
+    "download_sha256": "144021f4e4c5293d26d287718b79099c9e6679f1a0e797d7f980470d69708de6",
+    "png_sha256": "144021f4e4c5293d26d287718b79099c9e6679f1a0e797d7f980470d69708de6",
+    "size": [
+      144,
+      144
+    ],
+    "alpha_range": [
+      0,
+      255
+    ],
+    "processing": "png"
   }
 ]

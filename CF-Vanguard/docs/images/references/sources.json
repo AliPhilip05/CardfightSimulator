@@ -1,0 +1,390 @@
+[
+  {
+    "file": "dear-days-field.png",
+    "source_url": "https://vgdd-en.cf-vanguard.com/wordpress/wp-content/themes/vgdd_en_v1.2/assets/images/common/index/img_system_01.jpg",
+    "source_page": "https://vgdd-en.cf-vanguard.com/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "8aaded4cdf48ee6f13d3ece9975e2dc7f3d04df3406b826856a12842e4354044"
+  },
+  {
+    "file": "dear-days-2-system.jpg",
+    "source_url": "https://vgdd2.cf-vanguard.com/wordpress/wp-content/themes/vgdd2_v0/assets/images/common/index/img_system-01.jpg",
+    "source_page": "https://vgdd2.cf-vanguard.com/en/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "6817bd3eaf32c59114a1507d5be2a83993495cf51deb200f677ea8466c936c32"
+  },
+  {
+    "file": "vanguard-ex-publisher.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-ex/assets/img/fight/section01_img01.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-ex/fight/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "69e8eb4332c71352a415ecfeb0333beb856a7e06e6bd494ab8b25dc88b40ca17"
+  },
+  {
+    "file": "vanguard-zero-fight.png",
+    "source_url": "https://vgzero-en.bushiroad.com/wp-content/themes/vgzero/img/pc/top/system/ss-fight.png",
+    "source_page": "https://vgzero-en.bushiroad.com/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "4bc8aeed40e543b20b4de76f1a7483572ccc6dc62c28ad0484635c559246b63d"
+  },
+  {
+    "file": "lock-on-victory-fight.jpg",
+    "source_url": "https://www.cs.furyu.jp/vanguard-lov/images/system/img_05_02.jpg",
+    "source_page": "https://www.cs.furyu.jp/vanguard-lov/system/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "3f0149b76f6ab8ef04553866c1cda37c31eadd523c0df999e1d177083906ad81"
+  },
+  {
+    "file": "stride-to-victory-feature-01.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-stv/images/point/contents_01.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-stv/point/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "c49f90014d25aaaf52f9a4eaaa92b880f7f885494800b09a340f944c0226dc18"
+  },
+  {
+    "file": "stride-to-victory-feature-02.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-stv/images/point/contents_02.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-stv/point/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "5c2f90890bfd96c54b60c0e9dd61a4ca12c7ca19cc832bd7dfa43645cb67014d"
+  },
+  {
+    "file": "stride-to-victory-feature-03.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-stv/images/point/contents_03.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-stv/point/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "3c79da509c88a3eaf5ec375fa37a05d74d54a580477a881c9500b04fa69dc777"
+  },
+  {
+    "file": "stride-to-victory-feature-04.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-stv/images/point/contents_04.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-stv/point/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "19ba10b6e46a2bfb5f21e9b233cf5e7a0ead52b32c4c7550d83869d5c4d3286b"
+  },
+  {
+    "file": "stride-to-victory-feature-06.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-stv/images/point/contents_06.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-stv/point/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "68e1be81845551d8d5419db5ac20ac4ca8c59cf312b5a7d3c20c3a028a799669"
+  },
+  {
+    "file": "stride-to-victory-feature-07.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-stv/images/point/contents_07.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-stv/point/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "5707d385eb4942943b19c6aab0d534514ae0c7025b4c420d0ce8f771528b0662"
+  },
+  {
+    "file": "stride-to-victory-feature-08.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-stv/images/point/contents_08.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-stv/point/",
+    "processing": "Unchanged downloaded image",
+    "sha256": "2859ac5ad8a274e6429d51f130691d7a2101241f089cb6fbb7d646776aafb7ff"
+  },
+  {
+    "file": "ride-to-victory-fight.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-rtv/system/img/system_speedy_ph.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-rtv/system/index.html",
+    "processing": "Unchanged downloaded image",
+    "sha256": "d7080f77b7f3cd09688be2dd7a99adc685a981db36c2d05d30894d9cbc8d77e6"
+  },
+  {
+    "file": "lock-on-victory-opening-38.jpg",
+    "source_url": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiI-Rm8GLIfUMYkFL4vrTYIfIOG1LRSnvaWHLOIdkJUK7EdojbY_jN7BnoQ-uT23mvX4EH0TgBHuuT5_IxQfDTpaBwerKtNTy2oXUZUJkInyP46Xe_flw4TZ3A_750vLiTcr2945yGBXjo/s1600/38.jpg",
+    "source_page": "https://vanguardus.blogspot.com/2017/06/lets-translate-cardfight-vanguard-lock_5.html",
+    "processing": "Unchanged gameplay screenshot from fan translation; not publisher material",
+    "sha256": "9c9dfea26293dfa284953cb8fe627403d3571d3f6bd5492aa5c8ff05c46c70e3"
+  },
+  {
+    "file": "lock-on-victory-opening-39.jpg",
+    "source_url": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgjXOLMn8JJifdZBDHzD9AIK4yQSkEWky44B-QxudOLSjaLrHgz0nm9sgUohAMAk2DQY4HXA9iRAsu8cNAIORoWRxE8RtRNtMYNSqegxW5dPYkmRLEBIiemYox502m8q46HXva48lUEklI/s1600/39.jpg",
+    "source_page": "https://vanguardus.blogspot.com/2017/06/lets-translate-cardfight-vanguard-lock_5.html",
+    "processing": "Unchanged gameplay screenshot from fan translation; not publisher material",
+    "sha256": "0da6f1ec62964827bfcaa7cbc5e858848a30a2117ff2cd8258b1b046a93e1916"
+  },
+  {
+    "file": "lock-on-victory-opening-40.jpg",
+    "source_url": "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhowTSVU4a0of4mdEe0F2XUz9YgO2yyY_nIuZS_Ds-5GSe_xXMT2ZFMnp5RvbCUmnfKsQoF3GQOXrRurYJUhCVk3l5z-ZnYL1fnhT2vbb60PK-EwU_eT8kB6XpBX2zXh_ex4y8SW8DEpcI/s1600/40.jpg",
+    "source_page": "https://vanguardus.blogspot.com/2017/06/lets-translate-cardfight-vanguard-lock_5.html",
+    "processing": "Unchanged gameplay screenshot from fan translation; not publisher material",
+    "sha256": "6d5ac0ccc90048f6219e1a11f5eddb8622bb65112db39640878c5d077e1438fe"
+  },
+  {
+    "file": "dear-days-2-opening-presentation.pdf",
+    "source_url": "https://cf-vanguard.com/wordpress/wp-content/uploads/weekly_vg_20240903_s.pdf",
+    "source_page": "https://cf-vanguard.com/wordpress/wp-content/uploads/weekly_vg_20240903_s.pdf",
+    "processing": "Unchanged publisher PDF",
+    "sha256": "8b8d1fd26e97d2009824dbbd7f76a097c268210bfc7aca26969feb7a4e4353a1"
+  },
+  {
+    "file": "dear-days-2-publisher-page-17.png",
+    "source_url": "https://cf-vanguard.com/wordpress/wp-content/uploads/weekly_vg_20240903_s.pdf",
+    "source_page": "https://cf-vanguard.com/wordpress/wp-content/uploads/weekly_vg_20240903_s.pdf",
+    "processing": "Full PDF page 17, rendered at 1.5x; no crop or image alteration",
+    "sha256": "cf2162efef788d5c80dddc5d829759af4fb2d9842eedc5bd93c7eff4483593b9"
+  },
+  {
+    "file": "dear-days-2-publisher-page-18.png",
+    "source_url": "https://cf-vanguard.com/wordpress/wp-content/uploads/weekly_vg_20240903_s.pdf",
+    "source_page": "https://cf-vanguard.com/wordpress/wp-content/uploads/weekly_vg_20240903_s.pdf",
+    "processing": "Full PDF page 18, rendered at 1.5x; no crop or image alteration",
+    "sha256": "820775cc63c84db51ceb65a7381efb9a91e46eddd158616de94f10c5a2e7b497"
+  },
+  {
+    "file": "dear-days-2-field-reference.png",
+    "source_url": null,
+    "source_page": null,
+    "processing": "User attachment preserved unchanged",
+    "description": "First user field reference",
+    "sha256": "8064c191353af6646feebdb6131624a15fa8fb05572276ad7c9ed88a2e477d18"
+  },
+  {
+    "file": "vanguard-ex-field-reference.png",
+    "source_url": null,
+    "source_page": null,
+    "processing": "User attachment preserved unchanged",
+    "description": "User supplied EX image held for later documentation",
+    "sha256": "b8465bc0d5f1ebd1ee366c9a1bc9fb96ed2c2644a5a4441c37baf26f8ff04e51"
+  },
+  {
+    "file": "dear-days-2-phase-reference.png",
+    "source_url": null,
+    "source_page": null,
+    "processing": "User attachment preserved unchanged",
+    "description": "User supplied floating-phase reference",
+    "sha256": "fcf4cde348ec1281510a5e453cfc68561b9c64474b8d0c8baccac11fb9138d0d"
+  },
+  {
+    "file": "dear-days-trailer-00s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 0s, scaled to 640px; no repainting",
+    "sha256": "111f0758bb05b35f8e3203bdca554a7cca6a0292079ac9690b72b86cca6c6d5d"
+  },
+  {
+    "file": "dear-days-trailer-05s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 5s, scaled to 640px; no repainting",
+    "sha256": "4414390149f077030dfc8da2f5d336f48e1d1385f6d2ecc49edfea82aa950258"
+  },
+  {
+    "file": "dear-days-trailer-10s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 10s, scaled to 640px; no repainting",
+    "sha256": "4abc730646f7c56d985781b44c78599da276cce78474ac65961f309bfc61f48a"
+  },
+  {
+    "file": "dear-days-trailer-15s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 15s, scaled to 640px; no repainting",
+    "sha256": "9bbe61e4e724b3a2622d1a085cf88f350a40eb9df54fd5d9e7896031d28a46a8"
+  },
+  {
+    "file": "dear-days-trailer-20s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 20s, scaled to 640px; no repainting",
+    "sha256": "76dda7f2abdd359cb368562e5312e3b2f8b9de95ea22d8cc74671b0e936259ca"
+  },
+  {
+    "file": "dear-days-trailer-25s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 25s, scaled to 640px; no repainting",
+    "sha256": "c8fa9f73b43abe6da0a4d995e0d4b3f1c49ca85d345e0beb56f47b660af82e30"
+  },
+  {
+    "file": "dear-days-trailer-30s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 30s, scaled to 640px; no repainting",
+    "sha256": "dfec35c18e4c487bff8088a2f61ac1ca464665db76348eeaf300f52e823e9f0d"
+  },
+  {
+    "file": "dear-days-trailer-35s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 35s, scaled to 640px; no repainting",
+    "sha256": "4836a3ab948070b2a333612e40b81d4c9bea027312a983982cece335efac4fd9"
+  },
+  {
+    "file": "dear-days-trailer-40s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 40s, scaled to 640px; no repainting",
+    "sha256": "4dda53d0962e6c7391779cdae85de1942915cd70262e4fd7c9c88fd55852a5c9"
+  },
+  {
+    "file": "dear-days-trailer-45s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 45s, scaled to 640px; no repainting",
+    "sha256": "eaed6c283ca290fe02c5d5843d935cdfa0700591de999c49fab51b59c5c4cd5b"
+  },
+  {
+    "file": "dear-days-trailer-50s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 50s, scaled to 640px; no repainting",
+    "sha256": "db5024af07d0b17b5a6e939dae70eded3edf0c1b41313abe6c65fd4b2589c33b"
+  },
+  {
+    "file": "dear-days-trailer-55s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 55s, scaled to 640px; no repainting",
+    "sha256": "b6bdccc3e7b5861aea4acbc591756c54ed7aca9ba01fa3fdd6fd66b6545b204c"
+  },
+  {
+    "file": "dear-days-trailer-60s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 60s, scaled to 640px; no repainting",
+    "sha256": "bea842657f487ba771c7594e7596f6edfc30761fe512f6acf42a54bfcea75f3f"
+  },
+  {
+    "file": "dear-days-trailer-65s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 65s, scaled to 640px; no repainting",
+    "sha256": "82333c170542803d33a1b557b62d2b3235a864f177b9101e0b7d49ffe8c9362d"
+  },
+  {
+    "file": "dear-days-trailer-70s.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample at approximately 70s, scaled to 640px; no repainting",
+    "sha256": "00d8f1e5db0882aa9bf08e353b1f33c8ab422f7f2d0d65553a33991aee53dcb4"
+  },
+  {
+    "file": "dear-days-stand-draw-01.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 1 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "0edea00ed4a5436ee31d994a8bfdcf684daf7c9298bb3c6f531c0fc5be3dd54b"
+  },
+  {
+    "file": "dear-days-stand-draw-02.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 2 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "841c5b251175c5f5caeade9cb8b04e82ade4f21d223bf246be3af5d07a9614ac"
+  },
+  {
+    "file": "dear-days-stand-draw-03.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 3 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "f22cbf1307595467e55f2b8143b1121b91b5fcce14be5f8422f73392cbb5ae8a"
+  },
+  {
+    "file": "dear-days-stand-draw-04.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 4 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "f22cbf1307595467e55f2b8143b1121b91b5fcce14be5f8422f73392cbb5ae8a"
+  },
+  {
+    "file": "dear-days-stand-draw-05.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 5 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "0607db7b4a540a3df1c2d7c576edec617d8c2cd2c9498be1424b012178011a7a"
+  },
+  {
+    "file": "dear-days-stand-draw-06.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 6 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "b119a80eefb93d386c5144e28ffe873ee45ca53aad7b7e90512b41a66b18d7ac"
+  },
+  {
+    "file": "dear-days-stand-draw-07.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 7 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "c1e1207f17282cd3424b227199a635900c7258290cb1ec99bec070b655d978e2"
+  },
+  {
+    "file": "dear-days-stand-draw-08.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 8 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "7a613ff40fd1f85635bbea853830327d8a0a59247f9b0dea9b01525d91044cb5"
+  },
+  {
+    "file": "dear-days-stand-draw-09.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 9 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "b241a958e290538acc6534a0908844388c67e5a18d231f0d6d62332d423b1621"
+  },
+  {
+    "file": "dear-days-stand-draw-10.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 10 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "fcd4e8e5bc52f2f284fb18c44a33fab2d08a9f02ecec6e80342f6226839f29b7"
+  },
+  {
+    "file": "dear-days-stand-draw-11.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 11 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "6d0901f8778b08f4f62825c49d6725bcf73a8f25658ace18b4c30b31f71cab22"
+  },
+  {
+    "file": "dear-days-stand-draw-12.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 12 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "de1b92b2fbc49ac66bd711a37280368320f836911676279949e76809d23ad474"
+  },
+  {
+    "file": "dear-days-stand-draw-13.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 13 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "1bdd142b316ba404e625d67bbc11de45dee533a2f6695525c1af46632d3fa91d"
+  },
+  {
+    "file": "dear-days-stand-draw-14.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 14 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "79446af01e98f736302bb62d7b1a2c18738b29e60f61fc1aa4ba9668ea921df3"
+  },
+  {
+    "file": "dear-days-stand-draw-15.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 15 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "d1f96dd87d29c0ba1c95ee87dc447e23bdb75e35d502191e5a631ef877bf3dcb"
+  },
+  {
+    "file": "dear-days-stand-draw-16.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 16 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "ae91c8815c8475532d5dd1c29160e49324175c00bc96e8f74e6a4ed154338494"
+  },
+  {
+    "file": "dear-days-stand-draw-17.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 17 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "1652ec59f852058005ad478626f8fc5f2589a09b1793e9dba22c8ef9adf7b754"
+  },
+  {
+    "file": "dear-days-stand-draw-18.jpg",
+    "source_page": "https://store.steampowered.com/app/1881420/Cardfight_Vanguard_Dear_Days/",
+    "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
+    "processing": "FFmpeg sample 18 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
+    "sha256": "2b828bad7be76d1e89dca063ebd06a122d298deba6ad55accb1829e7821162b1"
+  }
+]

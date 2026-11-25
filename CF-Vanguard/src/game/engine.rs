@@ -3,14 +3,52 @@
 use super::card::{Card, DamageCard, Player, Trigger, Unit};
 use super::deck::{build_deck, prepare_player};
 use crate::story::Chapter;
+mod opening;
+pub use opening::{RpsChoice, SetupStage};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Phase {
+    Setup,
+    Stand,
+    Draw,
     Ride,
     Call,
     Battle,
     Cpu,
     Finished,
+}
+
+/// Actual turn progression; automatic opponent steps advance individually.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TurnStage {
+    Stand,
+    Draw,
+    Ride,
+    Main,
+    Battle,
+    End,
+}
+
+impl TurnStage {
+    pub const ALL: [Self; 6] = [
+        Self::Stand,
+        Self::Draw,
+        Self::Ride,
+        Self::Main,
+        Self::Battle,
+        Self::End,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Stand => "STAND",
+            Self::Draw => "DRAW",
+            Self::Ride => "RIDE",
+            Self::Main => "MAIN",
+            Self::Battle => "BATTLE",
+            Self::End => "END",
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -60,6 +98,33 @@ impl AttackUnit {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BattleStep {
+    Guard,
+    Drive,
+    Damage,
+    Close,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TriggerPart {
+    Power,
+    Critical,
+    Stand,
+    Heal,
+}
+
+impl TriggerPart {
+    pub fn instruction(self) -> &'static str {
+        match self {
+            Self::Power => "Choose a unit for +5000 power",
+            Self::Critical => "Choose a unit for +1 critical",
+            Self::Stand => "Choose a rear-guard to stand",
+            Self::Heal => "Choose a damage card to heal",
+        }
+    }
+}
+
 pub struct PendingAttack {
     pub cpu_attacking: bool,
     pub attacker: AttackUnit,
@@ -68,9 +133,27 @@ pub struct PendingAttack {
     pub attack_power: i32,
     pub target_power: i32,
     pub guardians: Vec<Card>,
+    pub step: BattleStep,
+    pub checked_card: Option<Card>,
+    pub decision: Option<TriggerPart>,
+    trigger_parts: Vec<TriggerPart>,
+    remaining_drive: usize,
+    remaining_damage: usize,
+    damage_started: bool,
+    damage_dealt: usize,
+    hit: bool,
+    target_name: &'static str,
 }
 
 impl PendingAttack {
+    fn checking_cpu(&self) -> bool {
+        if self.step == BattleStep::Drive {
+            self.cpu_attacking
+        } else {
+            !self.cpu_attacking
+        }
+    }
+
     pub fn shield(&self) -> i32 {
         self.guardians.iter().map(|card| card.shield).sum()
     }
@@ -81,6 +164,10 @@ pub struct MatchGame {
     pub cpu: Player,
     pub phase: Phase,
     pub turn: u32,
+    pub setup_stage: SetupStage,
+    pub rps_result: Option<(RpsChoice, RpsChoice)>,
+    pub player_won_rps: Option<bool>,
+    pub player_first: bool,
     pub chapter: Chapter,
     pub message: String,
     pub log: Vec<String>,
@@ -89,6 +176,7 @@ pub struct MatchGame {
     pub pending_attack: Option<PendingAttack>,
     break_ride_restand: bool,
     cpu_attack_index: usize,
+    cpu_stage: TurnStage,
 }
 
 impl MatchGame {
@@ -104,8 +192,12 @@ impl MatchGame {
         let mut game = Self {
             player,
             cpu,
-            phase: Phase::Ride,
+            phase: Phase::Setup,
             turn: 1,
+            setup_stage: SetupStage::RockPaperScissors,
+            rps_result: None,
+            player_won_rps: None,
+            player_first: true,
             chapter,
             message: "Your opening hand is ready. Choose a legal ride.".into(),
             log: Vec::new(),
@@ -114,8 +206,9 @@ impl MatchGame {
             pending_attack: None,
             break_ride_restand: false,
             cpu_attack_index: 0,
+            cpu_stage: TurnStage::Stand,
         };
-        game.log("Stand up, Vanguard!");
+        game.log("Choose rock, paper, or scissors to decide turn order.");
         game
     }
 
@@ -126,18 +219,26 @@ impl MatchGame {
         }
     }
 
+    pub fn stage(&self) -> Option<TurnStage> {
+        match self.phase {
+            Phase::Setup => None,
+            Phase::Stand => Some(TurnStage::Stand),
+            Phase::Draw => Some(TurnStage::Draw),
+            Phase::Ride => Some(TurnStage::Ride),
+            Phase::Call => Some(TurnStage::Main),
+            Phase::Battle => Some(TurnStage::Battle),
+            Phase::Cpu => Some(self.cpu_stage),
+            Phase::Finished => None,
+        }
+    }
+
     pub fn ride_options(&self) -> Vec<usize> {
         let grade = self.player.grade();
         self.player
             .hand
             .iter()
             .enumerate()
-            .filter(|(_, card)| {
-                !card.is_trigger()
-                    && card.grade >= grade
-                    && card.grade <= grade + 1
-                    && card.grade <= 3
-            })
+            .filter(|(_, card)| card.grade >= grade && card.grade <= grade + 1 && card.grade <= 3)
             .map(|(index, _)| index)
             .collect()
     }
@@ -147,13 +248,13 @@ impl MatchGame {
             .hand
             .iter()
             .enumerate()
-            .filter(|(_, card)| !card.is_trigger() && card.grade <= self.player.grade())
+            .filter(|(_, card)| card.grade <= self.player.grade())
             .map(|(index, _)| index)
             .collect()
     }
 
     pub fn ride(&mut self, hand_index: usize) {
-        if self.phase != Phase::Ride || hand_index >= self.player.hand.len() {
+        if self.phase != Phase::Ride || !self.ride_options().contains(&hand_index) {
             return;
         }
         let card = self.player.hand.remove(hand_index);
@@ -170,6 +271,7 @@ impl MatchGame {
                 card: card.clone(),
                 rested: false,
                 power_bonus: 10000,
+                critical_bonus: 0,
                 locked: false,
             });
             self.message = format!("BREAK RIDE! {} gets +10000 power.", card.name);
@@ -185,24 +287,23 @@ impl MatchGame {
     pub fn skip_ride(&mut self) {
         if self.phase == Phase::Ride {
             self.phase = Phase::Call;
-            self.message = "Ride phase complete. Call up to two rear-guards.".into();
+            self.message = "Ride phase complete. Call your rear-guards.".into();
         }
     }
 
     pub fn call(&mut self, hand_index: usize, rear_slot: usize) {
-        if self.phase != Phase::Call
-            || rear_slot >= 5
-            || self.player.rear[rear_slot].is_some()
-            || hand_index >= self.player.hand.len()
-        {
+        if self.phase != Phase::Call || rear_slot >= 5 || hand_index >= self.player.hand.len() {
             return;
         }
         let card = self.player.hand.remove(hand_index);
-        if card.is_trigger() || card.grade > self.player.grade() {
+        if card.grade > self.player.grade() {
             self.player.hand.insert(hand_index, card);
             return;
         }
         let name = card.name;
+        if let Some(previous) = self.player.rear[rear_slot].take() {
+            self.player.drop_zone.push(previous.card);
+        }
         self.player.rear[rear_slot] = Some(Unit::new(card));
         self.player_calls += 1;
         self.message = format!("Called {name} to circle {}.", rear_slot + 1);
@@ -210,7 +311,7 @@ impl MatchGame {
     }
 
     pub fn begin_battle(&mut self) {
-        if self.phase == Phase::Call {
+        if self.phase == Phase::Call && self.turn > 1 {
             self.phase = Phase::Battle;
             self.message = "Choose a standing front-row unit to attack.".into();
         }
@@ -321,6 +422,7 @@ impl MatchGame {
 
     pub fn can_attack(&self, attacker: AttackUnit) -> bool {
         self.phase == Phase::Battle
+            && self.turn > 1
             && self.pending_attack.is_none()
             && attacker.can_attack(&self.player)
     }
@@ -368,7 +470,7 @@ impl MatchGame {
 
     fn player_guard_shield(&self, source: GuardSource) -> Option<i32> {
         let attack = self.pending_attack.as_ref()?;
-        if !attack.cpu_attacking {
+        if !attack.cpu_attacking || attack.step != BattleStep::Guard {
             return None;
         }
         source.shield(&self.player, attack.target)
@@ -386,29 +488,282 @@ impl MatchGame {
         true
     }
 
+    /// Advance one visible battle step. Human trigger choices suspend progression.
     pub fn resolve_pending_attack(&mut self) {
-        let Some(attack) = self.pending_attack.take() else {
+        let Some(mut attack) = self.pending_attack.take() else {
             return;
         };
-        let (attacker, defender) = if attack.cpu_attacking {
-            (&mut self.cpu, &mut self.player)
-        } else {
-            (&mut self.player, &mut self.cpu)
-        };
-        let attacker_name = attack.attacker.unit(attacker).unwrap().card.name;
-        let target_name = attack.target.unit(defender).unwrap().card.name;
-        let outcome = resolve_attack(attacker, defender, &attack);
-        defender.drop_zone.extend(attack.guardians);
-
-        self.message = match outcome {
-            AttackOutcome::Damage(damage) => {
-                format!("{attacker_name} hit {target_name} for {damage} damage.")
+        if attack.decision.is_some() {
+            self.pending_attack = Some(attack);
+            return;
+        }
+        if attack.checked_card.is_some() {
+            while !attack.trigger_parts.is_empty() {
+                let part = attack.trigger_parts.remove(0);
+                let cpu = attack.checking_cpu();
+                let (owner, other) = if cpu {
+                    (&mut self.cpu, &self.player)
+                } else {
+                    (&mut self.player, &self.cpu)
+                };
+                let eligible = trigger_unit_targets(owner, part);
+                if part == TriggerPart::Heal {
+                    if owner.damage.is_empty() || owner.damage.len() < other.damage.len() {
+                        continue;
+                    }
+                    if !cpu {
+                        attack.decision = Some(part);
+                        break;
+                    }
+                    let index = owner.damage.iter().position(|c| !c.face_up).unwrap_or(0);
+                    let damage = owner.damage.remove(index);
+                    owner.drop_zone.push(damage.card);
+                } else if !eligible.is_empty() {
+                    if !cpu {
+                        attack.decision = Some(part);
+                        break;
+                    }
+                    let preferred = if part == TriggerPart::Stand {
+                        eligible
+                            .iter()
+                            .copied()
+                            .find(|u| u.unit(owner).is_some_and(|u| u.rested))
+                    } else if attack.step == BattleStep::Drive {
+                        Some(attack.attacker)
+                    } else {
+                        Some(AttackUnit::Vanguard)
+                    };
+                    let target = preferred
+                        .filter(|u| eligible.contains(u))
+                        .unwrap_or(eligible[0]);
+                    apply_trigger_part(owner, target, part);
+                }
             }
-            AttackOutcome::Retired => format!("{attacker_name} retired {target_name}."),
-            AttackOutcome::Miss => format!("{attacker_name}'s attack on {target_name} missed."),
+            if attack.decision.is_none() {
+                let card = attack.checked_card.take().unwrap();
+                let owner = if attack.checking_cpu() {
+                    &mut self.cpu
+                } else {
+                    &mut self.player
+                };
+                if attack.step == BattleStep::Drive {
+                    owner.hand.push(card);
+                } else {
+                    owner.damage.push(DamageCard {
+                        card,
+                        face_up: true,
+                    });
+                    attack.damage_dealt += 1;
+                }
+                self.pending_attack = Some(attack);
+                self.refresh_battle_power();
+                self.capture_outcome();
+            } else {
+                self.message = format!(
+                    "{}: {}",
+                    attack.checked_card.as_ref().unwrap().name,
+                    attack.decision.unwrap().instruction()
+                );
+                self.pending_attack = Some(attack);
+                self.refresh_battle_power();
+            }
+            return;
+        }
+        match attack.step {
+            BattleStep::Guard => {
+                attack.step = BattleStep::Drive;
+                attack.remaining_drive = if attack.attacker == AttackUnit::Vanguard {
+                    let owner = if attack.cpu_attacking {
+                        &self.cpu
+                    } else {
+                        &self.player
+                    };
+                    if owner.grade() >= 3 {
+                        2
+                    } else {
+                        1
+                    }
+                } else {
+                    0
+                };
+                self.message = "Guard step complete. Drive checks resolve next.".into();
+            }
+            BattleStep::Drive => {
+                if attack.remaining_drive > 0 {
+                    attack.remaining_drive -= 1;
+                    let (owner, other) = if attack.cpu_attacking {
+                        (&mut self.cpu, &self.player)
+                    } else {
+                        (&mut self.player, &self.cpu)
+                    };
+                    if let Some(card) = owner.draw() {
+                        owner.last_check = Some(format!("Drive: {}", card.name));
+                        self.message = format!("Drive check: {}", card.name);
+                        prepare_trigger_check(&mut attack, owner, other.damage.len(), card);
+                    }
+                } else {
+                    attack.step = BattleStep::Damage;
+                    self.message = "Drive checks complete. Compare battle power.".into();
+                }
+            }
+            BattleStep::Damage => {
+                if !attack.damage_started {
+                    let (offense, defense) = if attack.cpu_attacking {
+                        (&self.cpu, &mut self.player)
+                    } else {
+                        (&self.player, &mut self.cpu)
+                    };
+                    let power = attack.attacker.unit(offense).map_or(0, Unit::power)
+                        + attack
+                            .booster
+                            .and_then(|slot| offense.rear[slot].as_ref())
+                            .map_or(0, Unit::power);
+                    let defense_power =
+                        attack.target.unit(defense).map_or(0, Unit::power) + attack.shield();
+                    attack.hit = power >= defense_power;
+                    attack.damage_started = true;
+                    if attack.hit {
+                        match attack.target {
+                            AttackUnit::Rear(slot) => {
+                                if let Some(unit) = defense.rear[slot].take() {
+                                    defense.drop_zone.push(unit.card);
+                                }
+                                attack.step = BattleStep::Close;
+                            }
+                            AttackUnit::Vanguard => {
+                                attack.remaining_damage = attack
+                                    .attacker
+                                    .unit(offense)
+                                    .map_or(1, Unit::critical)
+                                    .max(0)
+                                    as usize
+                            }
+                        }
+                    } else {
+                        attack.step = BattleStep::Close;
+                    }
+                    self.message = if attack.hit {
+                        "Attack hits. Resolve damage checks."
+                    } else {
+                        "Guard successful. The attack does not hit."
+                    }
+                    .into();
+                } else if attack.remaining_damage > 0 {
+                    attack.remaining_damage -= 1;
+                    let (owner, other) = if attack.cpu_attacking {
+                        (&mut self.player, &self.cpu)
+                    } else {
+                        (&mut self.cpu, &self.player)
+                    };
+                    if let Some(card) = owner.draw() {
+                        owner.last_check = Some(format!("Damage: {}", card.name));
+                        self.message = format!("Damage check: {}", card.name);
+                        prepare_trigger_check(&mut attack, owner, other.damage.len(), card);
+                    }
+                } else {
+                    attack.step = BattleStep::Close;
+                }
+            }
+            BattleStep::Close => {
+                let defender = if attack.cpu_attacking {
+                    &mut self.player
+                } else {
+                    &mut self.cpu
+                };
+                defender.drop_zone.extend(attack.guardians);
+                self.message = if !attack.hit {
+                    "The attack was guarded.".into()
+                } else if attack.target != AttackUnit::Vanguard {
+                    format!("{} was retired.", attack.target_name)
+                } else {
+                    format!(
+                        "{} received {} damage check(s).",
+                        attack.target_name, attack.damage_dealt
+                    )
+                };
+                self.log(self.message.clone());
+                self.capture_outcome();
+                return;
+            }
+        }
+        let checking = attack.checked_card.is_some();
+        self.pending_attack = Some(attack);
+        self.refresh_battle_power();
+        if !checking {
+            self.capture_outcome();
+        }
+    }
+
+    pub fn trigger_decision(&self) -> Option<(TriggerPart, &'static str)> {
+        let attack = self.pending_attack.as_ref()?;
+        Some((attack.decision?, attack.checked_card.as_ref()?.name))
+    }
+
+    pub fn trigger_targets(&self) -> Vec<AttackUnit> {
+        self.trigger_decision().map_or_else(Vec::new, |(part, _)| {
+            trigger_unit_targets(&self.player, part)
+        })
+    }
+
+    pub fn choose_trigger_unit(&mut self, target: AttackUnit) -> bool {
+        if !self.trigger_targets().contains(&target) {
+            return false;
+        }
+        let part = self
+            .pending_attack
+            .as_mut()
+            .unwrap()
+            .decision
+            .take()
+            .unwrap();
+        apply_trigger_part(&mut self.player, target, part);
+        self.log(format!(
+            "{}: {}",
+            target.unit(&self.player).unwrap().card.name,
+            part.instruction()
+        ));
+        self.refresh_battle_power();
+        true
+    }
+
+    pub fn choose_trigger_damage(&mut self, index: usize) -> bool {
+        if !self
+            .trigger_decision()
+            .is_some_and(|(part, _)| part == TriggerPart::Heal)
+            || index >= self.player.damage.len()
+        {
+            return false;
+        }
+        let damage = self.player.damage.remove(index);
+        self.log(format!("Healed {}.", damage.card.name));
+        self.player.drop_zone.push(damage.card);
+        self.pending_attack.as_mut().unwrap().decision = None;
+        true
+    }
+
+    pub fn battle_totals(&self) -> Option<(i32, i32, i32)> {
+        let a = self.pending_attack.as_ref()?;
+        let (offense, defense) = if a.cpu_attacking {
+            (&self.cpu, &self.player)
+        } else {
+            (&self.player, &self.cpu)
         };
-        self.log(self.message.clone());
-        self.capture_outcome();
+        Some((
+            a.attacker.unit(offense).map_or(0, Unit::power)
+                + a.booster
+                    .and_then(|i| offense.rear[i].as_ref())
+                    .map_or(0, Unit::power),
+            a.target.unit(defense).map_or(0, Unit::power),
+            a.shield(),
+        ))
+    }
+
+    fn refresh_battle_power(&mut self) {
+        if let Some((attack, defense, _)) = self.battle_totals() {
+            let pending = self.pending_attack.as_mut().unwrap();
+            pending.attack_power = attack;
+            pending.target_power = defense;
+        }
     }
 
     pub fn can_restand(&self) -> bool {
@@ -434,29 +789,65 @@ impl MatchGame {
     }
 
     pub fn end_turn(&mut self) {
-        if self.phase != Phase::Battle || self.pending_attack.is_some() {
+        if !(self.phase == Phase::Battle || (self.phase == Phase::Call && self.turn == 1))
+            || self.pending_attack.is_some()
+        {
             return;
         }
+        clear_turn_bonuses(&mut self.player);
+        clear_turn_bonuses(&mut self.cpu);
+        unlock_rear_guards(&mut self.player);
+        self.turn += 1;
         self.phase = Phase::Cpu;
         self.cpu_attack_index = 0;
-        ready_player(&mut self.cpu);
-        self.cpu.draw_to_hand();
-        self.capture_outcome();
-        if self.phase != Phase::Cpu {
-            return;
-        }
-        cpu_ride(&mut self.cpu);
-        for _ in 0..2 {
-            cpu_call(&mut self.cpu);
-        }
-        cpu_limit_break(&mut self.cpu, &mut self.player);
-        self.advance_cpu_turn();
+        self.cpu_stage = TurnStage::Stand;
+        self.message = format!("{} begins the Stand phase.", self.cpu.name);
     }
 
     pub fn advance_cpu_turn(&mut self) {
         if self.phase != Phase::Cpu || self.pending_attack.is_some() {
             return;
         }
+        match self.cpu_stage {
+            TurnStage::Stand => {
+                ready_player(&mut self.cpu);
+                self.cpu_stage = TurnStage::Draw;
+            }
+            TurnStage::Draw => {
+                self.cpu.draw_to_hand();
+                self.cpu_stage = TurnStage::Ride;
+                self.capture_outcome();
+            }
+            TurnStage::Ride => {
+                cpu_ride(&mut self.cpu);
+                self.cpu_stage = TurnStage::Main;
+            }
+            TurnStage::Main => {
+                for _ in 0..2 {
+                    cpu_call(&mut self.cpu);
+                }
+                cpu_limit_break(&mut self.cpu, &mut self.player);
+                self.cpu_stage = if self.turn == 1 {
+                    TurnStage::End
+                } else {
+                    TurnStage::Battle
+                };
+            }
+            TurnStage::Battle => self.advance_cpu_battle(),
+            TurnStage::End => {
+                clear_turn_bonuses(&mut self.player);
+                clear_turn_bonuses(&mut self.cpu);
+                unlock_rear_guards(&mut self.cpu);
+                self.log(format!("{} completed its turn.", self.cpu.name));
+                self.start_player_turn();
+            }
+        }
+        if self.phase == Phase::Cpu && self.pending_attack.is_none() {
+            self.message = format!("{} · {} phase", self.cpu.name, self.cpu_stage.label());
+        }
+    }
+
+    fn advance_cpu_battle(&mut self) {
         while let Some(&attacker) = AttackUnit::CPU_ATTACK_ORDER.get(self.cpu_attack_index) {
             self.cpu_attack_index += 1;
             if self.declare_cpu_attack(attacker) {
@@ -478,10 +869,7 @@ impl MatchGame {
             }
         }
 
-        unlock_rear_guards(&mut self.cpu);
-        unlock_rear_guards(&mut self.player);
-        self.log(format!("{} completed its turn.", self.cpu.name));
-        self.start_player_turn();
+        self.cpu_stage = TurnStage::End;
     }
 
     fn declare_cpu_attack(&mut self, attacker: AttackUnit) -> bool {
@@ -552,6 +940,16 @@ impl MatchGame {
             attack_power,
             target_power,
             guardians,
+            step: BattleStep::Guard,
+            checked_card: None,
+            decision: None,
+            trigger_parts: Vec::new(),
+            remaining_drive: 0,
+            remaining_damage: 0,
+            damage_started: false,
+            damage_dealt: 0,
+            hit: false,
+            target_name,
         });
         self.message = format!(
             "{} attacks {target_name} for {attack_power} power.",
@@ -563,14 +961,26 @@ impl MatchGame {
 
     fn start_player_turn(&mut self) {
         self.turn += 1;
-        ready_player(&mut self.player);
-        self.player.draw_to_hand();
         self.player_calls = 0;
         self.break_ride_restand = false;
-        self.phase = Phase::Ride;
-        self.log(format!("Turn {} — your draw phase.", self.turn));
-        self.message = "New turn. Ride, call units, and make your attacks.".into();
-        self.capture_outcome();
+        self.phase = Phase::Stand;
+        self.log(format!("Turn {} — your Stand phase.", self.turn));
+    }
+
+    pub fn advance_player_turn(&mut self) {
+        match self.phase {
+            Phase::Stand => {
+                ready_player(&mut self.player);
+                self.phase = Phase::Draw;
+            }
+            Phase::Draw => {
+                self.player.draw_to_hand();
+                self.phase = Phase::Ride;
+                self.log(format!("Turn {} — drew one card.", self.turn));
+                self.capture_outcome();
+            }
+            _ => {}
+        }
     }
 
     fn capture_outcome(&mut self) {
@@ -582,6 +992,16 @@ impl MatchGame {
             self.winner = Some(false);
             self.phase = Phase::Finished;
             self.message = "Defeat. Regroup and try the fight again.".into();
+        }
+        if self.winner.is_some() {
+            if let Some(attack) = self.pending_attack.take() {
+                let defender = if attack.cpu_attacking {
+                    &mut self.player
+                } else {
+                    &mut self.cpu
+                };
+                defender.drop_zone.extend(attack.guardians);
+            }
         }
     }
 }
@@ -596,7 +1016,63 @@ fn pay_counter_blast(player: &mut Player, count: usize) {
     }
 }
 
+fn clear_turn_bonuses(player: &mut Player) {
+    for unit in player
+        .vanguard
+        .iter_mut()
+        .chain(player.rear.iter_mut().flatten())
+    {
+        unit.power_bonus = 0;
+        unit.critical_bonus = 0;
+    }
+}
+
+fn trigger_unit_targets(player: &Player, part: TriggerPart) -> Vec<AttackUnit> {
+    if part == TriggerPart::Heal {
+        return Vec::new();
+    }
+    std::iter::once(AttackUnit::Vanguard)
+        .chain((0..5).map(AttackUnit::Rear))
+        .filter(|unit| part != TriggerPart::Stand || *unit != AttackUnit::Vanguard)
+        .filter(|unit| unit.unit(player).is_some_and(|u| !u.locked))
+        .collect()
+}
+
+fn apply_trigger_part(player: &mut Player, target: AttackUnit, part: TriggerPart) {
+    if let Some(unit) = target.unit_mut(player) {
+        match part {
+            TriggerPart::Power => unit.power_bonus += 5000,
+            TriggerPart::Critical => unit.critical_bonus += 1,
+            TriggerPart::Stand => unit.rested = false,
+            TriggerPart::Heal => {}
+        }
+    }
+}
+
+fn prepare_trigger_check(
+    attack: &mut PendingAttack,
+    owner: &mut Player,
+    opponent_damage: usize,
+    card: Card,
+) {
+    attack.trigger_parts.clear();
+    if card.is_trigger() && matches_clan(owner, &card) {
+        attack.trigger_parts.push(TriggerPart::Power);
+        match card.trigger {
+            Trigger::Critical => attack.trigger_parts.push(TriggerPart::Critical),
+            Trigger::Stand => attack.trigger_parts.push(TriggerPart::Stand),
+            Trigger::Heal if !owner.damage.is_empty() && owner.damage.len() >= opponent_damage => {
+                attack.trigger_parts.push(TriggerPart::Heal)
+            }
+            Trigger::Draw => owner.draw_to_hand(),
+            _ => {}
+        }
+    }
+    attack.checked_card = Some(card);
+}
+
 fn ready_player(player: &mut Player) {
+    clear_turn_bonuses(player);
     for unit in player.rear.iter_mut().flatten() {
         unit.rested = false;
         unit.power_bonus = 0;
@@ -687,65 +1163,6 @@ fn restand_vanguard(player: &mut Player) {
     player.vanguard.as_mut().unwrap().rested = false;
 }
 
-enum AttackOutcome {
-    Miss,
-    Retired,
-    Damage(usize),
-}
-
-fn resolve_attack(
-    attacker: &mut Player,
-    defender: &mut Player,
-    attack: &PendingAttack,
-) -> AttackOutcome {
-    let is_vanguard = attack.attacker == AttackUnit::Vanguard;
-    let mut critical = if is_vanguard {
-        drive_check(attacker, defender.damage.len())
-    } else {
-        1
-    };
-
-    let attacking_unit = attack.attacker.unit(attacker).unwrap();
-    let boosting_unit = attack.booster.and_then(|slot| attacker.rear[slot].as_ref());
-    let attack_power = attacking_unit.power() + boosting_unit.map_or(0, Unit::power);
-    let defense_power = attack.target.unit(defender).unwrap().power() + attack.shield();
-    if attack_power < defense_power {
-        return AttackOutcome::Miss;
-    }
-    if let AttackUnit::Rear(slot) = attack.target {
-        let retired = defender.rear[slot].take().unwrap();
-        defender.drop_zone.push(retired.card);
-        return AttackOutcome::Retired;
-    }
-
-    if is_vanguard
-        && attacking_unit.card.name.contains("Glory Maelstrom")
-        && attacker.damage.len() >= 5
-    {
-        critical = 2;
-    }
-    AttackOutcome::Damage(deal_damage(defender, attacker, critical))
-}
-
-fn drive_check(attacker: &mut Player, opponent_damage: usize) -> i32 {
-    let mut critical = 1;
-    let checks = if attacker.grade() >= 3 { 2 } else { 1 };
-    for _ in 0..checks {
-        let Some(card) = attacker.draw() else {
-            break;
-        };
-        if card.is_trigger() && matches_clan(attacker, &card) {
-            if card.trigger == Trigger::Critical {
-                critical += 1;
-            }
-            apply_trigger(attacker, &card, opponent_damage);
-        }
-        attacker.last_check = Some(format!("Drive: {}", card.name));
-        attacker.hand.push(card);
-    }
-    critical
-}
-
 #[derive(Clone, Copy)]
 enum GuardSource {
     Hand(usize),
@@ -821,28 +1238,6 @@ fn auto_guard(defender: &mut Player, target: AttackUnit, needed: i32) -> Vec<Car
         .collect()
 }
 
-fn deal_damage(defender: &mut Player, attacker: &mut Player, count: i32) -> usize {
-    let mut dealt = 0;
-    for _ in 0..count {
-        if defender.damage.len() >= 6 {
-            break;
-        }
-        let Some(card) = defender.draw() else {
-            break;
-        };
-        defender.last_check = Some(format!("Damage: {}", card.name));
-        if card.is_trigger() && matches_clan(defender, &card) {
-            apply_trigger(defender, &card, attacker.damage.len());
-        }
-        defender.damage.push(DamageCard {
-            card,
-            face_up: true,
-        });
-        dealt += 1;
-    }
-    dealt
-}
-
 fn matches_clan(player: &Player, card: &Card) -> bool {
     player
         .vanguard
@@ -852,32 +1247,7 @@ fn matches_clan(player: &Player, card: &Card) -> bool {
             .rear
             .iter()
             .flatten()
-            .any(|unit| unit.card.clan == card.clan)
-}
-
-fn apply_trigger(player: &mut Player, card: &Card, opponent_damage: usize) {
-    if let Some(vanguard) = player.vanguard.as_mut() {
-        vanguard.power_bonus += 5000;
-    }
-    match card.trigger {
-        Trigger::Stand => {
-            if let Some(unit) = player
-                .rear
-                .iter_mut()
-                .flatten()
-                .find(|unit| unit.rested && !unit.locked)
-            {
-                unit.rested = false;
-            }
-        }
-        Trigger::Draw => player.draw_to_hand(),
-        Trigger::Heal if player.damage.len() >= opponent_damage => {
-            if let Some(damage) = player.damage.pop() {
-                player.drop_zone.push(damage.card);
-            }
-        }
-        _ => {}
-    }
+            .any(|unit| !unit.locked && unit.card.clan == card.clan)
 }
 
 #[cfg(test)]
@@ -901,7 +1271,31 @@ mod tests {
         game.player.vanguard = unit("Your Vanguard", 2, 10000, 5000);
         game.cpu.vanguard = unit("Opposing Vanguard", 2, 10000, 5000);
         game.phase = Phase::Battle;
+        game.turn = 2;
         game
+    }
+
+    fn finish_attack(game: &mut MatchGame) {
+        for _ in 0..80 {
+            if game.pending_attack.is_none() {
+                return;
+            }
+            if let Some((part, _)) = game.trigger_decision() {
+                if part == TriggerPart::Heal {
+                    assert!(game.choose_trigger_damage(0));
+                } else {
+                    let target = if part == TriggerPart::Stand {
+                        AttackUnit::Rear(1)
+                    } else {
+                        AttackUnit::Vanguard
+                    };
+                    assert!(game.choose_trigger_unit(target));
+                }
+            } else {
+                game.resolve_pending_attack();
+            }
+        }
+        panic!("attack failed to complete");
     }
 
     #[test]
@@ -973,7 +1367,7 @@ mod tests {
         assert!(game.declare_attack(attacker, AttackUnit::Rear(3), false));
         assert!(!game.player.rear[0].as_ref().unwrap().rested);
 
-        game.resolve_pending_attack();
+        finish_attack(&mut game);
         assert!(game.cpu.rear[3].is_none());
         assert!(game.cpu.rear[4].is_some());
         assert_eq!(game.cpu.drop_zone[0].name, "Rested opposing rear-guard");
@@ -1007,9 +1401,43 @@ mod tests {
             assert_eq!(attack.attack_power, expected_power);
             assert!(game.player.rear[slot].as_ref().unwrap().rested);
             assert!(game.boost_for(attacker).is_none());
-            game.resolve_pending_attack();
+            finish_attack(&mut game);
         }
         assert_eq!(game.cpu.damage.len(), 3);
+    }
+
+    #[test]
+    fn opponent_stages_advance_their_actions_once_and_wait_for_guarding() {
+        let mut game = battle();
+        game.cpu.vanguard.as_mut().unwrap().rested = true;
+        game.cpu.hand = vec![card("Next ride", 3, 11000, 0), card("Call", 2, 9000, 5000)];
+        let deck_count = game.cpu.deck.len();
+        game.end_turn();
+        assert_eq!(game.stage(), Some(TurnStage::Stand));
+        assert!(game.cpu.vanguard.as_ref().unwrap().rested);
+        game.advance_cpu_turn();
+        assert!(!game.cpu.vanguard.as_ref().unwrap().rested);
+        assert_eq!(game.stage(), Some(TurnStage::Draw));
+        assert_eq!(game.cpu.deck.len(), deck_count);
+        game.advance_cpu_turn();
+        assert_eq!(game.stage(), Some(TurnStage::Ride));
+        assert_eq!(game.cpu.deck.len(), deck_count - 1);
+        game.advance_cpu_turn();
+        assert_eq!(game.stage(), Some(TurnStage::Main));
+        assert_eq!(game.cpu.grade(), 3);
+        assert!(game.cpu.rear.iter().all(Option::is_none));
+        game.advance_cpu_turn();
+        assert_eq!(game.stage(), Some(TurnStage::Battle));
+        assert!(game.cpu.rear.iter().any(Option::is_some));
+        game.advance_cpu_turn();
+        let attacker = game.pending_attack.as_ref().unwrap().attacker;
+        let hand_count = game.cpu.hand.len();
+        for _ in 0..10 {
+            game.advance_cpu_turn();
+        }
+        assert_eq!(game.pending_attack.as_ref().unwrap().attacker, attacker);
+        assert_eq!(game.cpu.hand.len(), hand_count);
+        assert!(game.player.damage.is_empty());
     }
 
     #[test]
@@ -1024,6 +1452,9 @@ mod tests {
             card("Over-grade guardian", 3, 10000, 5000),
         ];
         game.end_turn();
+        for _ in 0..5 {
+            game.advance_cpu_turn();
+        }
         assert_eq!(game.phase, Phase::Cpu);
         assert_eq!(
             game.pending_attack.as_ref().unwrap().attacker,
@@ -1031,7 +1462,7 @@ mod tests {
         );
         assert!(game.player.damage.is_empty());
 
-        game.resolve_pending_attack();
+        finish_attack(&mut game);
         assert_eq!(game.player.damage.len(), 1);
         assert_eq!(game.player.hand.len(), 3);
         game.advance_cpu_turn();
@@ -1043,7 +1474,7 @@ mod tests {
         assert_eq!(game.pending_attack.as_ref().unwrap().shield(), 10000);
         assert!(game.player.drop_zone.is_empty());
 
-        game.resolve_pending_attack();
+        finish_attack(&mut game);
         assert_eq!(game.player.damage.len(), 1);
         assert_eq!(game.player.drop_zone.len(), 2);
         assert!(game.pending_attack.is_none());
@@ -1052,10 +1483,15 @@ mod tests {
             game.pending_attack.as_ref().unwrap().attacker,
             AttackUnit::Vanguard
         );
-        game.resolve_pending_attack();
+        finish_attack(&mut game);
         game.advance_cpu_turn();
+        assert_eq!(game.stage(), Some(TurnStage::End));
+        game.advance_cpu_turn();
+        assert_eq!(game.phase, Phase::Stand);
+        assert_eq!(game.turn, 4);
+        game.advance_player_turn();
+        game.advance_player_turn();
         assert_eq!(game.phase, Phase::Ride);
-        assert_eq!(game.turn, 2);
     }
 
     #[test]
@@ -1066,6 +1502,9 @@ mod tests {
         game.player.rear[3] = unit("Intercepting rear-guard", 2, 9000, 5000);
         game.player.rear[3].as_mut().unwrap().rested = true;
         game.end_turn();
+        for _ in 0..5 {
+            game.advance_cpu_turn();
+        }
         assert_eq!(
             game.pending_attack.as_ref().unwrap().target,
             AttackUnit::Rear(1)
@@ -1075,7 +1514,7 @@ mod tests {
         assert!(game.player.rear[3].is_none());
         assert_eq!(game.pending_attack.as_ref().unwrap().shield(), 5000);
         assert!(game.player.drop_zone.is_empty());
-        game.resolve_pending_attack();
+        finish_attack(&mut game);
         assert!(game.player.rear[1].is_some());
         assert_eq!(game.player.drop_zone[0].name, "Intercepting rear-guard");
         assert!(game.player.damage.is_empty());
@@ -1097,7 +1536,7 @@ mod tests {
         assert!(game.cpu.drop_zone.is_empty());
         assert!(game.player.hand.is_empty());
 
-        game.resolve_pending_attack();
+        finish_attack(&mut game);
         assert_eq!(game.player.hand[0].name, "Drive trigger");
         assert!(game.cpu.rear[1].is_none());
         assert_eq!(game.cpu.drop_zone.len(), 2);
@@ -1112,14 +1551,14 @@ mod tests {
             game.player.rear[1] = unit("Attacking rear-guard", 2, 9000, 5000);
             game.cpu.rear[1] = unit("Targeted rear-guard", 2, 9000, 5000);
             assert!(game.declare_attack(rear_guard, AttackUnit::Rear(1), false));
-            game.resolve_pending_attack();
+            finish_attack(&mut game);
             assert!(!game.can_attack(rear_guard));
 
             game.player
                 .deck
                 .push(Card::trigger("Drive trigger", "Royal Paladin", kind));
             assert!(game.declare_attack(AttackUnit::Vanguard, AttackUnit::Vanguard, false));
-            game.resolve_pending_attack();
+            finish_attack(&mut game);
 
             assert_eq!(game.can_attack(rear_guard), kind == Trigger::Stand);
             assert_eq!(
@@ -1127,5 +1566,273 @@ mod tests {
                 if kind == Trigger::Critical { 2 } else { 1 }
             );
         }
+    }
+    #[test]
+    fn opening_draw_and_first_turn_skip_battle() {
+        let mut game = MatchGame::new(CHAPTERS[0]);
+        assert_eq!(game.player.hand.len(), 5);
+        assert_eq!(game.player.deck.len(), 44);
+        game.play_rps(RpsChoice::Paper, RpsChoice::Rock);
+        game.finish_rps_reveal();
+        game.choose_turn_order(true);
+        game.mulligan(&[]);
+        game.confirm_opening_hands();
+        game.begin_fight();
+        assert_eq!(game.phase, Phase::Stand);
+        game.advance_player_turn();
+        assert_eq!(game.player.hand.len(), 5);
+        game.advance_player_turn();
+        assert_eq!(game.player.hand.len(), 6);
+        assert_eq!(game.player.deck.len(), 43);
+        game.skip_ride();
+        game.begin_battle();
+        assert_eq!(game.stage(), Some(TurnStage::Main));
+        assert!(!game.can_attack(AttackUnit::Vanguard));
+        game.end_turn();
+        assert_eq!(game.phase, Phase::Cpu);
+        assert_eq!(game.turn, 2);
+    }
+
+    #[test]
+    fn normal_calls_include_triggers_and_retire_overcalled_units() {
+        let mut game = battle();
+        game.phase = Phase::Call;
+        game.player.hand = vec![
+            Card::trigger("Stand", "Royal Paladin", Trigger::Stand),
+            card("Invalid ride", 0, 5000, 10000),
+        ];
+        game.player.rear[0] = unit("Old unit", 1, 7000, 5000);
+        assert!(game.call_options().contains(&0));
+        game.call(0, 0);
+        assert_eq!(game.player.rear[0].as_ref().unwrap().card.name, "Stand");
+        assert_eq!(game.player.drop_zone[0].name, "Old unit");
+        game.phase = Phase::Ride;
+        game.ride(0);
+        assert_eq!(game.player.hand.len(), 1);
+        assert_eq!(game.player.grade(), 2);
+    }
+
+    #[test]
+    fn split_critical_power_updates_boost_total_and_expires_at_end() {
+        let mut game = battle();
+        game.player.rear[2] = unit("Booster", 1, 7000, 5000);
+        game.player.deck.push(Card::trigger(
+            "Critical",
+            "Royal Paladin",
+            Trigger::Critical,
+        ));
+        assert!(game.declare_attack(AttackUnit::Vanguard, AttackUnit::Vanguard, true));
+        game.resolve_pending_attack();
+        game.resolve_pending_attack();
+        game.resolve_pending_attack();
+        assert_eq!(game.trigger_decision().unwrap().0, TriggerPart::Power);
+        game.resolve_pending_attack(); // A pending decision cannot be bypassed.
+        assert_eq!(game.trigger_decision().unwrap().0, TriggerPart::Power);
+        assert!(game.choose_trigger_unit(AttackUnit::Rear(2)));
+        assert_eq!(game.battle_totals().unwrap().0, 22000);
+        game.resolve_pending_attack();
+        assert_eq!(game.trigger_decision().unwrap().0, TriggerPart::Critical);
+        assert!(game.choose_trigger_unit(AttackUnit::Vanguard));
+        finish_attack(&mut game);
+        assert_eq!(game.cpu.damage.len(), 2);
+        assert_eq!(game.player.vanguard.as_ref().unwrap().critical(), 2);
+        game.end_turn();
+        assert_eq!(game.player.vanguard.as_ref().unwrap().critical(), 1);
+        assert_eq!(game.player.rear[2].as_ref().unwrap().power(), 7000);
+    }
+
+    #[test]
+    fn sixth_damage_heal_pauses_cpu_and_can_remove_face_down_damage() {
+        let mut game = battle();
+        game.phase = Phase::Cpu;
+        for player in [&mut game.player, &mut game.cpu] {
+            player.damage = (0..5)
+                .map(|_| DamageCard {
+                    card: card("Damage", 1, 6000, 5000),
+                    face_up: false,
+                })
+                .collect();
+        }
+        game.player
+            .deck
+            .push(Card::trigger("Heal", "Royal Paladin", Trigger::Heal));
+        game.cpu.rear[1] = unit("Attacker", 2, 10000, 5000);
+        assert!(game.open_attack(true, AttackUnit::Rear(1), AttackUnit::Vanguard, false));
+        for _ in 0..20 {
+            if game.trigger_decision().is_some() {
+                break;
+            }
+            game.resolve_pending_attack();
+        }
+        assert_eq!(game.trigger_decision().unwrap().0, TriggerPart::Power);
+        assert_eq!(game.player.damage.len(), 5);
+        assert!(game.choose_trigger_unit(AttackUnit::Vanguard));
+        game.resolve_pending_attack();
+        assert_eq!(game.trigger_decision().unwrap().0, TriggerPart::Heal);
+        game.advance_cpu_turn();
+        assert_eq!(game.trigger_decision().unwrap().0, TriggerPart::Heal);
+        assert!(game.choose_trigger_damage(3));
+        finish_attack(&mut game);
+        assert_eq!(game.player.damage.len(), 5);
+        assert!(game.player.damage.last().unwrap().face_up);
+        assert_eq!(game.player.drop_zone[0].name, "Damage");
+        assert_eq!(game.winner, None);
+    }
+
+    #[test]
+    fn draw_trigger_adds_one_card_and_stand_cannot_target_vanguard() {
+        let mut game = battle();
+        game.player
+            .deck
+            .push(Card::trigger("Draw", "Royal Paladin", Trigger::Draw));
+        assert!(game.declare_attack(AttackUnit::Vanguard, AttackUnit::Vanguard, false));
+        finish_attack(&mut game);
+        assert_eq!(game.player.hand.len(), 2);
+        assert_eq!(
+            Card::trigger("Draw", "Royal Paladin", Trigger::Draw).shield,
+            5000
+        );
+        assert!(trigger_unit_targets(&game.player, TriggerPart::Stand).is_empty());
+    }
+
+    #[test]
+    fn damage_power_does_not_cancel_remaining_critical_damage() {
+        let mut game = battle();
+        game.player.vanguard.as_mut().unwrap().critical_bonus = 1;
+        game.cpu
+            .deck
+            .push(Card::trigger("Defense", "Royal Paladin", Trigger::Stand));
+        assert!(game.declare_attack(AttackUnit::Vanguard, AttackUnit::Vanguard, false));
+        finish_attack(&mut game);
+        assert_eq!(game.cpu.damage.len(), 2);
+        assert_eq!(game.cpu.vanguard_power(), 15000);
+    }
+
+    #[test]
+    fn empty_deck_loses_after_the_last_draw_resolves() {
+        let mut game = battle();
+        game.player.deck = vec![card("Last card", 1, 7000, 5000)];
+        assert!(game.declare_attack(AttackUnit::Vanguard, AttackUnit::Vanguard, false));
+        finish_attack(&mut game);
+        assert_eq!(game.player.hand.len(), 1);
+        assert_eq!(game.winner, Some(false));
+        assert_eq!(game.phase, Phase::Finished);
+    }
+    #[test]
+    fn rps_ties_replay_and_only_the_winner_chooses_order() {
+        for human in RpsChoice::ALL {
+            for cpu in RpsChoice::ALL {
+                let mut game = MatchGame::new(CHAPTERS[0]);
+                assert!(!game.choose_turn_order(false));
+                assert!(game.play_rps(human, cpu));
+                assert!(!game.play_rps(human, cpu));
+                game.finish_rps_reveal();
+                if human == cpu {
+                    assert_eq!(game.setup_stage, SetupStage::RockPaperScissors);
+                } else if human.beats(cpu) {
+                    assert_eq!(game.setup_stage, SetupStage::ChooseOrder);
+                    assert!(game.choose_turn_order(false));
+                    assert!(!game.player_first);
+                } else {
+                    assert_eq!(game.setup_stage, SetupStage::Mulligan);
+                    assert!(!game.choose_turn_order(true));
+                    assert!(!game.player_first);
+                }
+                assert_eq!(game.player.hand.len(), 5);
+            }
+        }
+    }
+
+    #[test]
+    fn mulligan_is_once_only_and_draws_before_returned_cards_are_shuffled() {
+        let mut game = MatchGame::new(CHAPTERS[0]);
+        game.play_rps(RpsChoice::Paper, RpsChoice::Rock);
+        game.finish_rps_reveal();
+        game.choose_turn_order(true);
+        game.player.hand = vec![card("Return", 0, 5000, 10000); 5];
+        game.player.deck = vec![card("Replacement", 1, 7000, 5000); 12];
+        assert!(!game.mulligan(&[0, 0]));
+        assert!(!game.mulligan(&[5]));
+        assert_eq!(game.player.hand.len(), 5);
+        assert!(game.mulligan(&[0, 1, 2, 3, 4]));
+        assert!(game.player.hand.iter().all(|c| c.name == "Replacement"));
+        assert_eq!(game.player.deck.len(), 12);
+        assert_eq!(
+            game.player
+                .deck
+                .iter()
+                .filter(|c| c.name == "Return")
+                .count(),
+            5
+        );
+        assert!(!game.mulligan(&[]));
+        assert_eq!(game.setup_stage, SetupStage::HandsReady);
+        assert!(game.confirm_opening_hands());
+        assert!(!game.confirm_opening_hands());
+        assert_eq!(game.setup_stage, SetupStage::StandUp);
+        assert_eq!(game.phase, Phase::Setup);
+    }
+
+    #[test]
+    fn cpu_going_first_skips_battle_and_human_second_can_attack() {
+        let mut game = MatchGame::new(CHAPTERS[0]);
+        game.play_rps(RpsChoice::Rock, RpsChoice::Paper);
+        game.finish_rps_reveal();
+        assert!(game.mulligan(&[]));
+        game.confirm_opening_hands();
+        game.begin_fight();
+        assert_eq!(game.phase, Phase::Cpu);
+        assert_eq!(game.turn, 1);
+        for _ in 0..4 {
+            game.advance_cpu_turn();
+        }
+        assert_eq!(game.stage(), Some(TurnStage::End));
+        assert!(game.pending_attack.is_none());
+        assert!(game.player.damage.is_empty());
+        game.advance_cpu_turn();
+        assert_eq!(game.phase, Phase::Stand);
+        assert_eq!(game.turn, 2);
+        game.advance_player_turn();
+        game.advance_player_turn();
+        game.skip_ride();
+        game.begin_battle();
+        assert!(game.can_attack(AttackUnit::Vanguard));
+    }
+
+    #[test]
+    fn human_stand_precedes_draw_and_cannot_draw_twice() {
+        let mut game = battle();
+        game.phase = Phase::Stand;
+        game.player.rear[0] = unit("Rested booster", 1, 7000, 5000);
+        game.player.rear[0].as_mut().unwrap().rested = true;
+        let hand = game.player.hand.len();
+        let deck = game.player.deck.len();
+        assert!(game.player.rear[0].as_ref().unwrap().rested);
+        game.advance_player_turn();
+        assert!(!game.player.rear[0].as_ref().unwrap().rested);
+        assert_eq!(game.phase, Phase::Draw);
+        assert_eq!(game.player.hand.len(), hand);
+        game.advance_player_turn();
+        assert_eq!(game.phase, Phase::Ride);
+        assert_eq!(game.player.hand.len(), hand + 1);
+        assert_eq!(game.player.deck.len(), deck - 1);
+        game.advance_player_turn();
+        assert_eq!(game.player.hand.len(), hand + 1);
+    }
+    #[test]
+    fn locked_rear_guard_unlocks_at_its_owners_end_step() {
+        let mut game = battle();
+        game.player.rear[0] = unit("Locked", 1, 7000, 5000);
+        game.player.rear[0].as_mut().unwrap().locked = true;
+        game.phase = Phase::Cpu;
+        game.cpu_stage = TurnStage::End;
+        game.advance_cpu_turn();
+        assert!(game.player.rear[0].as_ref().unwrap().locked);
+        game.advance_player_turn();
+        game.advance_player_turn();
+        game.skip_ride();
+        game.begin_battle();
+        game.end_turn();
+        assert!(!game.player.rear[0].as_ref().unwrap().locked);
     }
 }

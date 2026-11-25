@@ -254,7 +254,7 @@ pub fn prepare_player(name: impl Into<String>, deck: Vec<Card>) -> Player {
     player
 }
 
-fn shuffle<T>(items: &mut [T]) {
+pub(super) fn shuffle<T>(items: &mut [T]) {
     let mut seed = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()

@@ -31,6 +31,10 @@ impl PresentationArt {
         }
     }
 
+    pub fn font(&self) -> Font {
+        self.font.clone()
+    }
+
     pub fn scale(&self) -> f32 {
         (screen_width() / 1440.0)
             .min(screen_height() / 900.0)

@@ -8,6 +8,9 @@ The [project README](../README.md) covers installation and controls. These docum
 - [VangPro research](research/vangpro-research.md): public-source and release-package analysis, versioned feature evidence, and an implementation roadmap for this simulator.
 - [Asset provenance](../assets/README.md): downloaded artwork, generated landscape, font license, refresh commands, and checksums.
 
+- [Gameplay TODO](../todo.md): highlighted trigger/check/pause/end-turn functions and pending automatic battle completion.
+- [Saved game references](images/references/README.md): preserved publisher screenshots, RPS/turn-order presentation, redraw example, trailer frames and user attachments.
+
 ## Current presentation
 
 ![Current title-screen capture](images/title-screen.png)
@@ -19,3 +22,11 @@ The [project README](../README.md) covers installation and controls. These docum
 When a function is added, renamed, removed, or changes responsibility, update its row in the function reference. Describe the actual prototype behavior, including manual controls and automatic costs, rather than assuming the implementation covers the full trading card game rules.
 
 Run `cargo fmt --check`, `cargo test`, and `cargo build` from the application directory after changing Rust code. Visually check title/menu/loading screens and a match after presentation changes; geometry tests do not verify texture orientation, colors, or text readability.
+
+### Opening review captures
+
+![Rock-paper-scissors layout](images/opening-rps.png)
+
+![Five-card redraw layout](images/opening-mulligan.png)
+
+These unchanged native captures use temporary review startup states to inspect each opening layout. The shipping application starts at Title and reaches these screens through normal fight loading. The review startup code is not included in the application.

@@ -4,22 +4,31 @@ mod art;
 mod board;
 mod cards;
 mod drawing;
+mod fighters;
+mod match_flow;
 mod match_hud;
+mod match_setup;
+mod motion;
 mod presentation;
 
-use crate::game::engine::{AttackUnit, MatchGame, Phase};
+use crate::game::engine::{
+    AttackUnit, BattleStep, MatchGame, Phase, RpsChoice, SetupStage, TriggerPart,
+};
 use crate::story::{SchoolRoute, CHAPTERS};
 use art::{normalize_card_name, CardArt};
 use board::{draw_battlefield, BattlefieldHighlights, BattlefieldLayout, TabletopArt};
-use cards::{draw_guard_card, draw_player_hand, fit_caption, HandLayout};
+use cards::{draw_guard_card, draw_player_hand, HandLayout};
 use drawing::{
     button, draw_ambient_background, draw_centered, draw_header, draw_round_panel,
     draw_school_crest, draw_star_emblem, draw_wrapped, CREAM, CYAN, GOLD, INK, MUTED, PANEL,
     PANEL_LIGHT, RED,
 };
+use fighters::FighterArt;
 use macroquad::prelude::*;
+use match_flow::MatchPrompt;
 use match_hud::{
-    draw_battle_log, draw_command_button, draw_match_hud, draw_match_shell, MatchLayout,
+    draw_action_panel, draw_battle_log, draw_decision_banner, draw_match_hud, draw_match_shell,
+    draw_phase_track, MatchLayout, PowerDisplay,
 };
 use presentation::PresentationArt;
 use std::collections::HashMap;
@@ -37,7 +46,10 @@ enum Screen {
 
 #[derive(Clone, Copy)]
 enum AttackSelection {
-    Target(AttackUnit),
+    Target {
+        attacker: AttackUnit,
+        boost: bool,
+    },
     Boost {
         attacker: AttackUnit,
         target: AttackUnit,
@@ -50,10 +62,13 @@ enum GuardSelection {
     Intercept(usize),
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum MatchAction {
     SkipRide,
     Battle,
-    CancelAttack,
+    CancelSelection,
+    ToggleLog,
+    Menu,
     Declare {
         attacker: AttackUnit,
         target: AttackUnit,
@@ -77,16 +92,14 @@ pub struct App {
     match_game: Option<MatchGame>,
     selected_hand_card: Option<usize>,
     hand_page: usize,
+    mulligan_selection: Vec<usize>,
     attack_selection: Option<AttackSelection>,
     guard_selection: Option<GuardSelection>,
     guard_press: Option<Vec2>,
     cpu_continue_at: f64,
     tabletop_art: TabletopArt,
-    aichi_icon: Texture2D,
-    kai_icon: Texture2D,
-    guard_glyph: Texture2D,
-    target_glyph: Texture2D,
-    boost_glyph: Texture2D,
+    fighters: FighterArt,
+    power_display: PowerDisplay,
     card_records: Vec<serde_json::Value>,
     card_art: CardArt,
     show_battle_log: bool,
@@ -98,6 +111,7 @@ pub struct App {
 impl App {
     pub async fn load() -> Self {
         let presentation = PresentationArt::new();
+        set_default_font(presentation.font());
         presentation.loading(0.0, "READING CARD DATABASE");
         next_frame().await;
         let database: serde_json::Value =
@@ -117,6 +131,7 @@ impl App {
             match_game: None,
             selected_hand_card: None,
             hand_page: 0,
+            mulligan_selection: Vec::new(),
             attack_selection: None,
             guard_selection: None,
             guard_press: None,
@@ -128,11 +143,8 @@ impl App {
                 )),
                 kai_sleeve: embedded_texture(include_bytes!("../assets/tabletop/kai-sleeve.png")),
             },
-            aichi_icon: embedded_texture(include_bytes!("../assets/fighters/aichi-icon.png")),
-            kai_icon: embedded_texture(include_bytes!("../assets/fighters/kai-icon.png")),
-            guard_glyph: embedded_texture(include_bytes!("../assets/glyph-guard.png")),
-            target_glyph: embedded_texture(include_bytes!("../assets/glyph-target.png")),
-            boost_glyph: embedded_texture(include_bytes!("../assets/glyph-boost.png")),
+            fighters: FighterArt::new(),
+            power_display: PowerDisplay::default(),
             card_art: CardArt::new(&card_records),
             card_records,
             show_battle_log: false,
@@ -286,12 +298,47 @@ impl App {
     }
 
     fn draw_match(&mut self) {
+        if self
+            .match_game
+            .as_ref()
+            .is_some_and(|g| g.phase == Phase::Setup)
+        {
+            if self.match_game.as_ref().unwrap().setup_stage != SetupStage::StandUp {
+                self.draw_setup();
+                return;
+            }
+            if get_time() >= self.cpu_continue_at {
+                let game = self.match_game.as_mut().unwrap();
+                game.begin_fight();
+                self.cpu_continue_at = get_time() + phase_delay(game);
+            }
+        }
+        if let Some(game) = self.match_game.as_mut() {
+            if matches!(game.phase, Phase::Stand | Phase::Draw)
+                && get_time() >= self.cpu_continue_at
+            {
+                game.advance_player_turn();
+                self.cpu_continue_at = get_time() + phase_delay(game);
+            }
+        }
         if let Some(game) = self.match_game.as_mut() {
             if game.phase == Phase::Cpu
                 && game.pending_attack.is_none()
                 && get_time() >= self.cpu_continue_at
             {
                 game.advance_cpu_turn();
+                self.cpu_continue_at = get_time() + phase_delay(game);
+            }
+        }
+        if let Some(game) = self.match_game.as_mut() {
+            if game
+                .pending_attack
+                .as_ref()
+                .is_some_and(|a| a.step != BattleStep::Guard && a.decision.is_none())
+                && get_time() >= self.cpu_continue_at
+            {
+                game.resolve_pending_attack();
+                self.cpu_continue_at = get_time() + 0.55;
             }
         }
         let card_names = self
@@ -307,7 +354,19 @@ impl App {
         };
         let layout = MatchLayout::new(screen_width(), screen_height());
         let battlefield = BattlefieldLayout::new(layout.board);
-        let hand = HandLayout::new(layout.hand, game.player.hand.len(), self.hand_page);
+        let draw_phase = game.stage() == Some(crate::game::engine::TurnStage::Draw);
+        let draw_progress =
+            (1.0 - (self.cpu_continue_at - get_time()) / 0.8).clamp(0.0, 1.0) as f32;
+        let hand = if game.phase == Phase::Draw && !game.player.deck.is_empty() {
+            HandLayout::during_draw(
+                layout.hand,
+                game.player.hand.len(),
+                self.hand_page,
+                motion::draw_progress(draw_progress),
+            )
+        } else {
+            HandLayout::new(layout.hand, game.player.hand.len(), self.hand_page)
+        };
         let mouse = Vec2::from(mouse_position());
         let guardians = game
             .pending_attack
@@ -315,12 +374,11 @@ impl App {
             .map_or(&[][..], |attack| attack.guardians.as_slice());
 
         draw_match_shell(&layout);
-        let toggle_log = draw_match_hud(
+        let prompt = MatchPrompt::new(
             game,
-            &layout,
-            self.show_battle_log,
-            &self.aichi_icon,
-            &self.kai_icon,
+            self.attack_selection,
+            self.selected_hand_card,
+            self.guard_selection,
         );
         draw_battlefield(
             game,
@@ -329,14 +387,50 @@ impl App {
             &self.tabletop_art,
             &self.battlefield_highlights(game),
             guardians,
+            (game.stage() == Some(crate::game::engine::TurnStage::Stand)).then_some((
+                game.phase == Phase::Cpu,
+                ((1.5 - (self.cpu_continue_at - get_time()) - 0.35) / 0.7).clamp(0.0, 1.0) as f32,
+            )),
         );
+        draw_match_hud(
+            game,
+            &layout,
+            self.fighters.portrait("Aichi"),
+            self.fighters.portrait(&game.cpu.name),
+        );
+        draw_phase_track(game, layout.phases);
+
+        draw_decision_banner(&prompt, layout.decision);
+        self.power_display.draw(prompt.combat, layout.power);
         let selected_hand = match self.guard_selection {
             Some(GuardSelection::Hand(index)) => Some(index),
             _ => self.selected_hand_card,
         };
         draw_player_hand(game, &hand, selected_hand, self.card_art.textures());
-        let new_page = hand.draw_page_controls();
-        let action = self.draw_controls(game, layout.controls);
+        if game.phase == Phase::Setup {
+            match_setup::draw_stand_up(
+                (1.0 - (self.cpu_continue_at - get_time()) / 1.8).clamp(0.0, 1.0) as f32,
+            );
+            return;
+        }
+        if draw_phase {
+            match_setup::draw_draw_animation(
+                &self.tabletop_art,
+                game,
+                &battlefield,
+                &hand,
+                self.card_art.textures(),
+                draw_progress,
+            );
+        }
+        let new_page = hand.draw_page_controls(game.phase != Phase::Draw);
+        let action = draw_action_panel(
+            game,
+            &prompt,
+            layout.actions,
+            self.show_battle_log,
+            self.attack_selection.is_some(),
+        );
         if let Some(GuardSelection::Hand(index)) = self.guard_selection {
             if self.is_dragging_guard(mouse)
                 && is_mouse_button_down(MouseButton::Left)
@@ -350,21 +444,16 @@ impl App {
             }
         }
 
-        if toggle_log {
-            self.show_battle_log = !self.show_battle_log;
-        }
-        let log_open = self.show_battle_log;
-        if log_open {
+        if self.show_battle_log {
             draw_battle_log(game, layout.log);
         }
-        if toggle_log
-            || (log_open
-                && layout.log.contains(mouse)
-                && is_mouse_button_pressed(MouseButton::Left))
-        {
+        if is_key_pressed(KeyCode::Escape) {
+            self.handle_match_clicks(&battlefield, &hand, mouse);
             return;
         }
-
+        if self.show_battle_log && layout.log.contains(mouse) {
+            return;
+        }
         self.hand_page = hand.page;
         if let Some(page) = new_page {
             self.hand_page = page;
@@ -373,13 +462,22 @@ impl App {
             self.guard_press = None;
         } else if let Some(action) = action {
             self.apply_match_action(action);
-        } else {
+        } else if !layout.blocks_field_input(mouse) {
             self.handle_match_clicks(&battlefield, &hand, mouse);
         }
     }
 
     fn battlefield_highlights(&self, game: &MatchGame) -> BattlefieldHighlights {
         let mut highlights = BattlefieldHighlights::default();
+        if let Some((part, _)) = game.trigger_decision() {
+            if part == TriggerPart::Heal {
+                highlights.player_damage = true;
+            }
+            for target in game.trigger_targets() {
+                mark_field_unit(&mut highlights, target, false, GOLD);
+            }
+            return highlights;
+        }
         if let Some(attack) = &game.pending_attack {
             mark_field_unit(&mut highlights, attack.attacker, attack.cpu_attacking, GOLD);
             mark_field_unit(&mut highlights, attack.target, !attack.cpu_attacking, RED);
@@ -391,7 +489,7 @@ impl App {
                     CYAN,
                 );
             }
-            if attack.cpu_attacking {
+            if attack.cpu_attacking && attack.step == BattleStep::Guard {
                 highlights.guardian = Some(if self.guard_selection.is_some() {
                     GOLD
                 } else {
@@ -413,9 +511,7 @@ impl App {
         match (game.phase, self.attack_selection) {
             (Phase::Call, _) if self.selected_hand_card.is_some() => {
                 for (slot, unit) in game.player.rear.iter().enumerate() {
-                    if unit.is_none() {
-                        highlights.player_rear[slot] = Some(CYAN);
-                    }
+                    highlights.player_rear[slot] = Some(if unit.is_none() { CYAN } else { GOLD });
                 }
             }
             (Phase::Battle, None) => {
@@ -425,8 +521,14 @@ impl App {
                     }
                 }
             }
-            (Phase::Battle, Some(AttackSelection::Target(attacker))) => {
+            (Phase::Battle, Some(AttackSelection::Target { attacker, boost })) => {
                 mark_field_unit(&mut highlights, attacker, false, GOLD);
+                if let Some(slot) = attacker
+                    .boost_slot()
+                    .filter(|_| game.boost_for(attacker).is_some())
+                {
+                    highlights.player_rear[slot] = Some(if boost { GOLD } else { CYAN });
+                }
                 for target in game.attack_targets() {
                     mark_field_unit(&mut highlights, target, true, RED);
                 }
@@ -443,185 +545,19 @@ impl App {
         highlights
     }
 
-    fn draw_controls(&self, game: &MatchGame, bounds: Rect) -> Option<MatchAction> {
-        let mut action = None;
-        let mut right = bounds.right();
-        let mut first_button = true;
-        let mut action_button = |label: &str, width: f32, accent: Color, choice: MatchAction| {
-            let width = width.min((bounds.w * 0.235).max(72.0));
-            right -= width;
-            let primary = first_button && accent != MUTED;
-            first_button = false;
-            let button = Rect::new(right, bounds.y + 4.0, width, bounds.h - 8.0);
-            if draw_command_button(label, button, accent, primary) {
-                action = Some(choice);
-            }
-            right -= 8.0;
-        };
-
-        let title: String;
-        let detail: String;
-        let mut glyph = None;
-        let mut accent = CREAM;
-        if let Some(attack) = &game.pending_attack {
-            let (attacker, defender) = if attack.cpu_attacking {
-                (&game.cpu, &game.player)
-            } else {
-                (&game.player, &game.cpu)
-            };
-            let attacker = unit_name(attack.attacker, attacker);
-            let target = unit_name(attack.target, defender);
-            let shield = attack.shield();
-            glyph = Some(&self.guard_glyph);
-            accent = if attack.cpu_attacking { CYAN } else { GOLD };
-            title = format!("{attacker} attacks {target}");
-            let instruction = if attack.cpu_attacking {
-                let guard_called = !attack.guardians.is_empty();
-                let label = if guard_called {
-                    "DONE GUARDING"
-                } else {
-                    "NO GUARD"
-                };
-                action_button(label, 160.0, accent, MatchAction::Resolve);
-                if self.guard_selection.is_some() {
-                    "Click the Guardian Circle to place the selected card."
-                } else if guard_called {
-                    "Add another guardian or finish guarding."
-                } else {
-                    "Move a highlighted card to the Guardian Circle or choose No Guard."
-                }
-            } else {
-                action_button("RESOLVE ATTACK", 170.0, CYAN, MatchAction::Resolve);
-                if attack.guardians.is_empty() {
-                    "Opponent passed."
-                } else {
-                    "Opponent guarded."
-                }
-            };
-            detail = format!(
-                "{} attack vs {} defense + {shield} shield   ·   {instruction}",
-                attack.attack_power, attack.target_power
-            );
-        } else if let Some(selection) = self.attack_selection {
-            match selection {
-                AttackSelection::Target(attacker) => {
-                    action_button("CANCEL", 110.0, MUTED, MatchAction::CancelAttack);
-                    glyph = Some(&self.target_glyph);
-                    accent = RED;
-                    title = format!("Choose a target for {}", unit_name(attacker, &game.player));
-                    detail =
-                        "Click the opposing Vanguard or a highlighted front-row rear-guard.".into();
-                }
-                AttackSelection::Boost { attacker, target } => {
-                    action_button(
-                        "BOOST",
-                        112.0,
-                        CYAN,
-                        MatchAction::Declare {
-                            attacker,
-                            target,
-                            boost: true,
-                        },
-                    );
-                    action_button(
-                        "NO BOOST",
-                        130.0,
-                        MUTED,
-                        MatchAction::Declare {
-                            attacker,
-                            target,
-                            boost: false,
-                        },
-                    );
-                    action_button("CANCEL", 100.0, MUTED, MatchAction::CancelAttack);
-                    glyph = Some(&self.boost_glyph);
-                    accent = CYAN;
-                    title = format!("Boost {}?", unit_name(attacker, &game.player));
-                    detail = game.boost_for(attacker).map_or_else(
-                        || "Continue with No Boost.".into(),
-                        |booster| {
-                            format!(
-                                "Click {} behind it to add {} power.",
-                                booster.card.name,
-                                booster.power()
-                            )
-                        },
-                    );
-                }
-            }
-        } else {
-            match game.phase {
-                Phase::Ride => {
-                    action_button("SKIP RIDE", 138.0, MUTED, MatchAction::SkipRide);
-                    title = "Ride phase".into();
-                    detail = "Choose a highlighted card from your hand to ride.".into();
-                }
-                Phase::Call => {
-                    action_button("BATTLE PHASE", 160.0, GOLD, MatchAction::Battle);
-                    if game.can_limit_break() {
-                        action_button("LIMIT BREAK", 140.0, RED, MatchAction::LimitBreak);
-                    }
-                    title = "Main phase".into();
-                    detail = "Select a card in hand, then click an empty rear-guard circle.".into();
-                }
-                Phase::Battle => {
-                    action_button("END TURN", 138.0, GOLD, MatchAction::EndTurn);
-                    if game.can_limit_break() {
-                        action_button("LIMIT BREAK", 140.0, RED, MatchAction::LimitBreak);
-                    }
-                    if game.can_restand() {
-                        action_button("RE-STAND", 120.0, GOLD, MatchAction::Restand);
-                    }
-                    glyph = Some(&self.target_glyph);
-                    accent = CYAN;
-                    title = "Battle phase".into();
-                    detail = if AttackUnit::FRONT_ROW
-                        .into_iter()
-                        .any(|attacker| game.can_attack(attacker))
-                    {
-                        "Click a highlighted front-row unit to attack.".into()
-                    } else {
-                        "End the turn when you are ready.".into()
-                    };
-                }
-                Phase::Cpu => {
-                    title = "Opponent's turn".into();
-                    detail = game.message.clone();
-                }
-                Phase::Finished => {
-                    action_button("VIEW RESULT", 155.0, GOLD, MatchAction::Result);
-                    title = "Cardfight complete".into();
-                    detail = game.message.clone();
-                }
-            }
-        }
-
-        let mut text_x = bounds.x + 7.0;
-        if let Some(glyph) = glyph {
-            let size = 24.0;
-            draw_texture_ex(
-                glyph,
-                text_x,
-                bounds.center().y - size * 0.5,
-                accent,
-                DrawTextureParams {
-                    dest_size: Some(vec2(size, size)),
-                    ..Default::default()
-                },
-            );
-            text_x += 35.0;
-        }
-        let text_width = right - text_x;
-        if text_width > 0.0 {
-            let title = fit_caption(&title, text_width, 17);
-            let detail = fit_caption(&detail, text_width, 13);
-            draw_text(&title, text_x, bounds.center().y - 4.0, 17.0, accent);
-            draw_text(&detail, text_x, bounds.center().y + 14.0, 13.0, MUTED);
-        }
-        action
-    }
-
     fn apply_match_action(&mut self, action: MatchAction) {
+        match action {
+            MatchAction::ToggleLog => {
+                self.show_battle_log = !self.show_battle_log;
+                return;
+            }
+            MatchAction::Menu => {
+                self.screen = Screen::Menu;
+                self.guard_press = None;
+                return;
+            }
+            _ => {}
+        }
         let Some(game) = self.match_game.as_mut() else {
             return;
         };
@@ -632,7 +568,8 @@ impl App {
         match action {
             MatchAction::SkipRide => game.skip_ride(),
             MatchAction::Battle => game.begin_battle(),
-            MatchAction::CancelAttack => {}
+            MatchAction::CancelSelection => {}
+            MatchAction::ToggleLog | MatchAction::Menu => unreachable!(),
             MatchAction::Declare {
                 attacker,
                 target,
@@ -644,7 +581,10 @@ impl App {
                 game.resolve_pending_attack();
                 self.cpu_continue_at = get_time() + 0.65;
             }
-            MatchAction::EndTurn => game.end_turn(),
+            MatchAction::EndTurn => {
+                game.end_turn();
+                self.cpu_continue_at = get_time() + phase_delay(game);
+            }
             MatchAction::LimitBreak => game.use_limit_break(),
             MatchAction::Restand => game.use_restand(),
             MatchAction::Result => self.screen = Screen::Result,
@@ -666,12 +606,31 @@ impl App {
                 return;
             }
             self.guard_press = None;
-            if self.attack_selection.take().is_none() && self.guard_selection.take().is_none() {
+            let selecting = self.attack_selection.take().is_some()
+                | self.guard_selection.take().is_some()
+                | self.selected_hand_card.take().is_some();
+            if !selecting {
                 self.screen = Screen::Menu;
             }
             return;
         }
 
+        if let Some((part, _)) = game.trigger_decision() {
+            if is_mouse_button_pressed(MouseButton::Left) {
+                let changed = if part == TriggerPart::Heal {
+                    battlefield
+                        .damage_at(mouse, game.player.damage.len(), false)
+                        .is_some_and(|i| game.choose_trigger_damage(i))
+                } else {
+                    field_unit_at(battlefield, mouse, false)
+                        .is_some_and(|unit| game.choose_trigger_unit(unit))
+                };
+                if changed {
+                    self.cpu_continue_at = get_time() + 0.55;
+                }
+            }
+            return;
+        }
         if is_mouse_button_pressed(MouseButton::Left) {
             if let Some(index) = battlefield.damage_at(mouse, game.player.damage.len(), false) {
                 if game.flip_damage(index) {
@@ -684,7 +643,7 @@ impl App {
         let playing_guard = game
             .pending_attack
             .as_ref()
-            .is_some_and(|attack| attack.cpu_attacking);
+            .is_some_and(|attack| attack.cpu_attacking && attack.step == BattleStep::Guard);
         if playing_guard {
             if is_mouse_button_released(MouseButton::Left) {
                 let dragged_to_circle = self.guard_press.take().is_some_and(|start| {
@@ -738,10 +697,8 @@ impl App {
                 if let Some(index) = hand.card_at(mouse) {
                     self.selected_hand_card = game.call_options().contains(&index).then_some(index);
                 } else if let Some(slot) = battlefield.rear_at(mouse, false) {
-                    if game.player.rear[slot].is_none() {
-                        if let Some(index) = self.selected_hand_card.take() {
-                            game.call(index, slot);
-                        }
+                    if let Some(index) = self.selected_hand_card.take() {
+                        game.call(index, slot);
                     }
                 }
             }
@@ -751,23 +708,48 @@ impl App {
                 match self.attack_selection {
                     None => {
                         if let Some(attacker) = friendly.filter(|&unit| game.can_attack(unit)) {
-                            self.attack_selection = Some(AttackSelection::Target(attacker));
+                            self.attack_selection = Some(AttackSelection::Target {
+                                attacker,
+                                boost: false,
+                            });
+                        } else if let Some(attacker) = AttackUnit::FRONT_ROW.into_iter().find(|a| {
+                            game.can_attack(*a)
+                                && game.boost_for(*a).is_some()
+                                && friendly == a.boost_slot().map(AttackUnit::Rear)
+                        }) {
+                            self.attack_selection = Some(AttackSelection::Target {
+                                attacker,
+                                boost: true,
+                            });
                         }
                     }
-                    Some(AttackSelection::Target(attacker)) => {
+                    Some(AttackSelection::Target { attacker, boost }) => {
                         if let Some(target) =
                             enemy.filter(|target| game.attack_targets().contains(target))
                         {
-                            if game.boost_for(attacker).is_some() {
+                            if boost {
+                                game.declare_attack(attacker, target, true);
+                                self.attack_selection = None;
+                            } else if game.boost_for(attacker).is_some() {
                                 self.attack_selection =
                                     Some(AttackSelection::Boost { attacker, target });
                             } else {
                                 game.declare_attack(attacker, target, false);
                                 self.attack_selection = None;
                             }
+                        } else if game.boost_for(attacker).is_some()
+                            && friendly == attacker.boost_slot().map(AttackUnit::Rear)
+                        {
+                            self.attack_selection = Some(AttackSelection::Target {
+                                attacker,
+                                boost: !boost,
+                            });
                         } else if let Some(next) = friendly.filter(|&unit| game.can_attack(unit)) {
                             self.attack_selection =
-                                (next != attacker).then_some(AttackSelection::Target(next));
+                                (next != attacker).then_some(AttackSelection::Target {
+                                    attacker: next,
+                                    boost: false,
+                                });
                         }
                     }
                     Some(AttackSelection::Boost { attacker, target }) => {
@@ -781,7 +763,7 @@ impl App {
                     }
                 }
             }
-            Phase::Cpu | Phase::Finished => {}
+            Phase::Setup | Phase::Stand | Phase::Draw | Phase::Cpu | Phase::Finished => {}
         }
     }
 
@@ -1040,6 +1022,8 @@ impl App {
     }
 
     fn start_match(&mut self) {
+        self.power_display = PowerDisplay::default();
+        self.mulligan_selection.clear();
         self.match_game = None;
         self.loading_stage = 0;
         self.loading_started = get_time();
@@ -1121,6 +1105,11 @@ fn visible_card_names(game: &MatchGame) -> Vec<String> {
                 .map(|unit| unit.card.name.to_string()),
         );
     }
+    if game.phase == Phase::Draw {
+        if let Some(card) = game.player.deck.last() {
+            names.push(card.name.to_owned());
+        }
+    }
     names
 }
 
@@ -1194,4 +1183,13 @@ fn draw_card_detail(card: &serde_json::Value, textures: &HashMap<String, Texture
         12.0,
         MUTED,
     );
+}
+
+/// Keeps automatic Stand and Draw readable before the next decision phase.
+fn phase_delay(game: &MatchGame) -> f64 {
+    match game.stage() {
+        Some(crate::game::engine::TurnStage::Stand) => 1.5,
+        Some(crate::game::engine::TurnStage::Draw) => 0.8,
+        _ => 0.65,
+    }
 }

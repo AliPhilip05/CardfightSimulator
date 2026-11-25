@@ -36,6 +36,22 @@ ASSETS = [
      "https://cf-vanguard.com/products/supply/minisleeve_389/", "sleeve"),
     ("tabletop/vanguard-zones.png", "https://drive.google.com/uc?export=download&id=1_HDsYJEwk1H1S_rg74zXzGthCbwFcUYF",
      "https://www.reddit.com/r/cardfightvanguard/comments/rpbpwi/", "psd"),
+    ('fighters/morikawa-standing.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-09.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/katsumi-morikawa/', 'png'),
+    ('fighters/morikawa-icon.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-09.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/katsumi-morikawa/', 'png'),
+    ('fighters/kamui-standing.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-04.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/kamui-katsuragi/', 'png'),
+    ('fighters/kamui-icon.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-04.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/kamui-katsuragi/', 'png'),
+    ('fighters/misaki-standing.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-03.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/misaki-tokura/', 'png'),
+    ('fighters/misaki-icon.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-03.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/misaki-tokura/', 'png'),
+    ('fighters/ren-standing.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-05.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/ren-suzugamori/', 'png'),
+    ('fighters/ren-icon.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-05.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/ren-suzugamori/', 'png'),
+    ('fighters/asaka-standing.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-06.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/asaka-narumi/', 'png'),
+    ('fighters/asaka-icon.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-06.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/asaka-narumi/', 'png'),
+    ('fighters/leon-standing.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-16.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/leon-souryu/', 'png'),
+    ('fighters/leon-icon.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-16.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/leon-souryu/', 'png'),
+    ('fighters/naoki-standing.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-b02.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/naoki-ishida-hs/', 'png'),
+    ('fighters/naoki-icon.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-b02.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/naoki-ishida-hs/', 'png'),
+    ('fighters/takuto-standing.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-stand-b16.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/takuto-tatsunagi-hs/', 'png'),
+    ('fighters/takuto-icon.png', 'https://anime.cf-vanguard.com/vg2018-if/wordpress/wp-content/uploads/char-icon-b16.png', 'https://anime.cf-vanguard.com/vg2018-if/characters/takuto-tatsunagi-hs/', 'png'),
 ]
 
 

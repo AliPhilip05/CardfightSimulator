@@ -4,7 +4,7 @@
 
 A fan-made Rust desktop Cardfight!! Vanguard prototype set in the Limit Break and Break Ride era, inspired by the presentation of *Ride to Victory!!* and *Lock on Victory!!*.
 
-The game includes Story Mode, CPU Quick Fights, and a searchable library of 2,083 era card entries with official card artwork. The field has a complete Guardian Circle and sideways overlapping damage cards that can be flipped for manual Counter-Blast.
+The game includes Story Mode, CPU Quick Fights, and a searchable library of 2,083 era card entries with official card artwork. Fights open with rock-paper-scissors, first/second selection, one mulligan and “Stand up, Vanguard!” The field has floating phases, fighter portraits, live power bars, a complete Guardian Circle and sideways overlapping damage cards. Stand/Draw are visibly paced, and trigger choices pause the battle.
 
 ## Run
 
@@ -20,6 +20,8 @@ Press **Enter** or click the title screen to open the menu. Matches load their d
 ## Documentation
 
 - [Game setup, controls, and prototype limits](CF-Vanguard/README.md)
+- [Pending gameplay TODO and highlighted functions](CF-Vanguard/todo.md)
+- [Saved game UI references](CF-Vanguard/docs/images/references/README.md)
 - [Documentation index](CF-Vanguard/docs/README.md)
 - [Architecture and screen/battle flow](CF-Vanguard/docs/architecture.md)
 - [Every function and its responsibility](CF-Vanguard/docs/functions.md)

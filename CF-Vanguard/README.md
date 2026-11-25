@@ -17,14 +17,17 @@ The window opens at 1440 × 960 and can be resized. Startup shows loading progre
 ## Controls
 
 - **Ride:** click a playable card in your hand. The game highlights legal cards.
-- **Call:** click a card in hand, then an empty rear-guard circle. Call as many legal units as you can fit.
+- **Opening:** play rock-paper-scissors. The winner chooses first or second; the CPU chooses first when it wins. Select zero to five cards for one mulligan, then confirm both hands and Stand Up.
+- **Phases:** Stand and Draw advance visibly before Ride. Draw happens once per turn, including the opening turn. The first global turn skips Battle and offers End Turn in Main.
+- **Call:** select a legal card and then a rear circle. Calling over an occupied circle retires its unit. Trigger units can be called too.
 - **Attack:** click one of your standing front-row units, then click the opposing Vanguard or an occupied front-row rear-guard.
-- **Boost:** when a standing grade 0 or 1 is directly behind the attacker, click it or choose **Boost** to add its power for the battle. Choose **No Boost** to leave it standing.
+- **Boost:** tap the eligible unit behind an attacker to select boosting; tap again while choosing a target to remove it. You can also choose Boost/No Boost after selecting a target. Live attack/defense bars reflect boosts, guards and triggers.
 - **Guard:** for each opponent attack, choose **No Guard** or move one or more highlighted cards to the Guardian Circle. Drag a card from hand onto the circle, or click a hand card or eligible interceptor and then the circle. Choose **Done Guarding** to resolve the attack.
 - **Damage Zone / Counter-Blast:** cards lie sideways in one overlapping vertical stack, like the printed mat. During your turn, click a card's exposed strip to turn it face down for manual Counter-Blast; click again to restore it for manual Counter-Charge or to correct a click. `CB` shows available face-up damage. Hover face-up damage for a larger preview. You cannot flip the opponent's damage or change resources during an unresolved attack or after the match ends.
 - **End Turn:** passes play to the CPU. Finish guarding or pass on each attack to continue.
 - **Limit Break / Break Ride:** activate the corresponding buttons when available. Limit Break automatically pays its own Counter-Blast 2 from available face-up damage; manual flips do not activate an ability or prepay that button's cost.
-- **Escape:** return to the main menu.
+- **Triggers:** choose the highlighted unit for power, critical or Stand; select a damage strip for Heal. Checks pause for your choices and then continue.
+- **Log:** opens a compact recent-plays drawer. **Escape** closes it or cancels a current selection before returning to the menu.
 
 Story Mode follows a six chapter route through the Card Capital introduction, tournaments and Asia Circuit, VF Koshien, the Reversed fighters, and the Star-vader finale. The Link Joker chapter lets you choose the Hitsue, Fukuhara, or Miyaji school route. The fictionalized story beats and selected cards are based on the 3DS games *Ride to Victory!!* and *Lock on Victory!!*; research notes and sources are in [RESEARCH.md](RESEARCH.md).
 
@@ -49,8 +52,10 @@ The [VangPro research report](docs/research/vangpro-research.md) compares public
 - `scripts/fetch_era_card_assets.py` refreshes the card data and artwork. Install its optional dependency with `python3 -m pip install -r requirements-assets.txt`, then run `python3 scripts/fetch_era_card_assets.py`.
 - `scripts/fetch_tabletop_assets.py` refreshes the playmat, sleeves, icons, and provenance manifest. Install `requirements-tabletop-assets.txt` first. Sleeve SVGs keep downloaded illustrations inside an editable rounded card frame; their PNGs have transparent exterior corners. CairoSVG needs the Cairo system library (on Homebrew macOS, set `DYLD_FALLBACK_LIBRARY_PATH=/opt/homebrew/lib` if needed).
 
-The field follows the classic official guide: three aligned columns, five Rear-guard Circles, a central Vanguard, Guardian Circle toward the opponent, damage on the left, and Trigger/Deck/Drop down the right. The opposing half is mirrored. The damage pocket stacks up to six sideways cards; each has an exposed clickable strip, and hover previews show its full face upright. Hit testing follows the stack's drawing order. The black field, yellow/blue circles, metallic blue rails, and complete green Guardian Circle draw on FuRyu's official Ride to Victory!! screenshots. This prototype retains the Limit Break / Break Ride field rather than adding modern Ride Deck and Order zones.
+The field follows the classic official guide: three aligned columns, five Rear-guard Circles, a central Vanguard, Guardian Circle toward the opponent, damage on the left, and Trigger/Deck/Drop down the right. The opposing half is mirrored. The damage pocket stacks up to six sideways cards; each has an exposed clickable strip, and hover previews show its full face upright. Hit testing follows the stack's drawing order. The green hex field, translucent metallic zones, corner portraits, floating phase list and compact commands draw on the official game references, especially Dear Days/2. The complete green Guardian Circle and yellow/blue unit circles retain the older field language. This prototype retains the Limit Break / Break Ride field rather than adding modern Ride Deck and Order zones.
 
 ## Prototype scope
 
 This is a playable foundation, not a complete rules engine. CPU decisions, card effects, guard skills such as sentinels, and story events are simplified. The bundled pool covers English BT01–BT15, EB01–EB10, and TD01–TD13 records available from the official public API; some 3DS-exclusive, Japanese-only, and promotional cards are outside that source. The sample deck builder chooses legal-looking lists from that pool and is not an exact dump of the 3DS opponents' deck recipes. Card names and artwork belong to their respective owners; see [asset provenance](assets/card_images/README.md).
+
+The [opening and battle architecture](docs/architecture.md) documents phase timing and trigger resolution. [Saved references](docs/images/references/README.md) include the RPS and redraw examples. [todo.md](todo.md) highlights the trigger, pause, Resolve and End Turn functions for the requested future automation.

@@ -9,41 +9,113 @@ use crate::game::engine::{MatchGame, Phase};
 use macroquad::prelude::*;
 use std::collections::HashMap;
 
-pub(super) fn draw_field_unit(rect: Rect, unit: &Unit, card_art: &HashMap<String, Texture2D>) {
-    let face = if unit.rested {
+pub(super) fn draw_field_unit(
+    rect: Rect,
+    unit: &Unit,
+    card_art: &HashMap<String, Texture2D>,
+    stand_progress: f32,
+) {
+    let mut face = if unit.rested {
         Rect::new(
-            rect.x + (rect.w - rect.h) * 0.5,
-            rect.y + (rect.h - rect.w) * 0.5,
+            rect.center().x - rect.h * 0.5,
+            rect.center().y - rect.w * 0.5,
             rect.h,
             rect.w,
         )
     } else {
         rect
     };
-    draw_card_face(face, &unit.card, unit.rested, card_art);
+    if unit.rested && !unit.locked && stand_progress > 0.0 {
+        let progress = super::motion::smoothstep(stand_progress);
+        let angle = std::f32::consts::FRAC_PI_2 * (1.0 - progress);
+        let size = vec2(
+            rect.w * angle.cos() + rect.h * angle.sin(),
+            rect.h * angle.cos() + rect.w * angle.sin(),
+        );
+        face = Rect::new(
+            rect.center().x - size.x * 0.5,
+            rect.center().y - size.y * 0.5,
+            size.x,
+            size.y,
+        );
+        if let Some(texture) = card_art.get(&super::normalize_card_name(unit.card.name)) {
+            draw_texture_ex(
+                texture,
+                rect.x,
+                rect.y,
+                WHITE,
+                DrawTextureParams {
+                    dest_size: Some(rect.size()),
+                    rotation: angle,
+                    ..Default::default()
+                },
+            );
+            draw_rectangle_lines(
+                rect.x - 2.0,
+                rect.y - 2.0,
+                rect.w + 4.0,
+                rect.h + 4.0,
+                2.0,
+                Color {
+                    a: (std::f32::consts::PI * progress).sin() * 0.8,
+                    ..CYAN
+                },
+            );
+        } else {
+            draw_card_face(rect, &unit.card, false, card_art);
+        }
+    } else {
+        draw_card_face(face, &unit.card, unit.rested, card_art);
+    }
     if unit.locked {
         draw_rectangle(
             face.x,
             face.y,
             face.w,
             face.h,
-            Color::new(0.03, 0.04, 0.08, 0.87),
+            Color::new(0.02, 0.03, 0.05, 0.90),
         );
-        draw_centered("LOCKED", face.x, face.y + face.h * 0.55, face.w, 11.0, CYAN);
-    } else {
-        let tag_w = rect.h * 0.57;
-        let tag_h = rect.h * 0.17;
-        let x = face.x + (face.w - tag_w) * 0.5;
-        let y = if unit.rested {
-            face.bottom() - tag_h * 0.75
-        } else {
-            face.bottom() - tag_h
-        };
-        draw_rectangle(x, y, tag_w, tag_h, Color::new(0.018, 0.045, 0.085, 0.94));
-        let number = unit.power().to_string();
-        let color = if unit.power_bonus > 0 { CYAN } else { CREAM };
-        draw_centered(&number, x, y + tag_h * 0.75, tag_w, rect.h * 0.125, color);
+        draw_centered("LOCKED", face.x, face.center().y + 4.0, face.w, 13.0, CYAN);
+        return;
     }
+    let h = (rect.h * 0.14).max(14.0);
+    let w = rect.w * 1.12;
+    let x = face.center().x - w * 0.5;
+    let y = face.bottom() - h * 0.35;
+    draw_rectangle(x, y, w, h, Color::from_rgba(3, 9, 15, 236));
+    let power = unit.power().to_string();
+    let size = (rect.h * 0.16).max(14.0);
+    draw_centered(&power, x + 1.0, y + h * 0.86 + 1.0, w, size, BLACK);
+    draw_centered(
+        &power,
+        x,
+        y + h * 0.86,
+        w,
+        size,
+        if unit.power_bonus > 0 {
+            CYAN
+        } else {
+            Color::from_rgba(255, 222, 101, 255)
+        },
+    );
+    if unit.critical() > 1 {
+        draw_text(
+            &format!("CRIT {}", unit.critical()),
+            face.x,
+            face.y - 8.0,
+            13.0,
+            GOLD,
+        );
+    }
+    let grade = format!("G{}", unit.card.grade);
+    draw_rectangle(
+        face.x - 3.0,
+        face.y - 3.0,
+        22.0,
+        15.0,
+        Color::from_rgba(7, 18, 27, 235),
+    );
+    draw_text(&grade, face.x, face.y + 9.0, 12.0, WHITE);
 }
 
 pub(super) fn draw_guard_card(rect: Rect, card: &Card, card_art: &HashMap<String, Texture2D>) {
@@ -274,6 +346,31 @@ impl HandLayout {
         }
     }
 
+    pub(super) fn during_draw(panel: Rect, count: usize, page: usize, progress: f32) -> Self {
+        let mut current = Self::new(panel, count, page);
+        let target = Self::new(panel, count + 1, current.page);
+        current.first_x += (target.first_x - current.first_x) * progress;
+        current.card_step += (target.card_step - current.card_step) * progress;
+        current
+    }
+
+    pub(super) fn draw_destination(&self) -> Option<Rect> {
+        let target = Self::new(self.panel, self.count + 1, self.page);
+        target
+            .visible_indices()
+            .contains(&self.count)
+            .then(|| target.card_rect(self.count))
+    }
+
+    pub(super) fn next_page_button(&self) -> Rect {
+        Rect::new(
+            self.panel.right() - HAND_GUTTER - 22.0,
+            self.panel.y + 4.0,
+            22.0,
+            21.0,
+        )
+    }
+
     fn visible_indices(&self) -> std::ops::Range<usize> {
         let first = self.page * self.capacity;
         first..(first + self.capacity).min(self.count)
@@ -304,14 +401,23 @@ impl HandLayout {
             .find(|&index| self.card_rect(index).contains(point))
     }
 
-    pub(super) fn draw_page_controls(&self) -> Option<usize> {
+    pub(super) fn draw_page_controls(&self, interactive: bool) -> Option<usize> {
         if self.pages <= 1 {
             return None;
         }
         let x = self.panel.right() - HAND_GUTTER;
         let y = self.panel.y + 4.0;
         let previous = self.page > 0 && button("<", x - 108.0, y, 22.0, 21.0, MUTED);
-        let next = self.page + 1 < self.pages && button(">", x - 22.0, y, 22.0, 21.0, MUTED);
+        let next_rect = self.next_page_button();
+        let next = self.page + 1 < self.pages
+            && button(
+                ">",
+                next_rect.x,
+                next_rect.y,
+                next_rect.w,
+                next_rect.h,
+                MUTED,
+            );
         draw_centered(
             &format!("{} / {}", self.page + 1, self.pages),
             x - 83.0,
@@ -321,6 +427,9 @@ impl HandLayout {
             CREAM,
         );
 
+        if !interactive {
+            return None;
+        }
         let mut wheel = 0.0;
         if self.panel.contains(mouse_position().into()) && !is_mouse_button_down(MouseButton::Left)
         {
@@ -344,34 +453,15 @@ pub(super) fn draw_player_hand(
 ) {
     let panel = layout.panel;
     let edge = Color::new(0.23, 0.37, 0.53, 0.85);
-    draw_rectangle(
-        panel.x,
-        panel.y,
-        panel.w,
-        panel.h,
-        Color::new(0.056, 0.087, 0.15, 0.94),
-    );
-    draw_rectangle(
-        panel.x + 1.0,
-        panel.y + HAND_HEADER - 3.0,
-        (panel.w - 2.0).max(0.0),
-        (panel.h - HAND_HEADER + 2.0).max(0.0),
-        Color::new(0.026, 0.047, 0.083, 0.76),
-    );
-    draw_rectangle_lines(panel.x, panel.y, panel.w, panel.h, 1.0, edge);
-    draw_line(
-        panel.left(),
-        panel.y + HAND_HEADER - 3.0,
-        panel.right(),
-        panel.y + HAND_HEADER - 3.0,
-        1.0,
-        edge,
-    );
-
-    let hovered = layout.card_at(mouse_position().into());
+    // Cards float over the arena, with a quiet caption instead of a boxed tray.
+    let hovered = if game.phase == Phase::Draw {
+        None
+    } else {
+        layout.card_at(mouse_position().into())
+    };
     let active = hovered.or(selected);
     draw_text(
-        &format!("HAND   {}", layout.count),
+        &format!("HAND  {}", layout.count),
         panel.x + HAND_GUTTER,
         panel.y + 19.0,
         15.0,
@@ -540,5 +630,36 @@ mod tests {
         }
         assert_eq!(reachable, (0..41).collect::<Vec<_>>());
         assert_eq!(HandLayout::new(panel, 2, first_page.pages).page, 0);
+    }
+    #[test]
+    fn draw_reserves_the_same_slot_the_final_hand_uses() {
+        let panel = Rect::new(300.0, 700.0, 850.0, 180.0);
+        for count in [0, 5, 8, 12] {
+            let old = HandLayout::new(panel, count, 0);
+            let reserved = HandLayout::during_draw(panel, count, 0, 1.0);
+            let final_hand = HandLayout::new(panel, count + 1, 0);
+            for i in old.visible_indices() {
+                if final_hand.visible_indices().contains(&i) {
+                    assert_eq!(reserved.card_rect(i), final_hand.card_rect(i));
+                }
+            }
+            assert_eq!(
+                reserved.draw_destination(),
+                final_hand
+                    .visible_indices()
+                    .contains(&count)
+                    .then(|| final_hand.card_rect(count))
+            );
+        }
+        let full_page = HandLayout::new(panel, 0, 0).capacity;
+        assert!(HandLayout::new(panel, full_page, 0)
+            .draw_destination()
+            .is_none());
+        assert!(HandLayout::new(panel, full_page + 1, 0)
+            .draw_destination()
+            .is_none());
+        assert!(HandLayout::new(panel, full_page + 1, 1)
+            .draw_destination()
+            .is_some());
     }
 }

@@ -1,70 +1,73 @@
 # Application architecture
 
-## Startup and screen flow
+## Startup and opening sequence
 
-`src/main.rs` configures the resizable Macroquad window and awaits `App::load`. The loader first creates the opening artwork and font, then renders progress between database parsing and tabletop initialization. The application subsequently draws one screen per frame.
+`src/main.rs` configures the resizable Macroquad window and awaits `App::load`. The loader renders real progress between artwork/database/tabletop initialization. `PresentationArt` owns the original landscape, official Aichi/Kai cutouts and logo, and bundled Rajdhani font; the font is shared throughout the app.
 
 ```mermaid
 flowchart LR
-    Boot[Load artwork and database] --> Title[Title screen]
-    Title --> Menu[Main menu]
-    Menu --> Route[Story school selection]
-    Menu --> Loading[Build decks and preload opening art]
-    Route --> Loading
-    Loading --> Match[Cardfight]
-    Menu --> Library[Card library]
-    Match --> Result[Result]
-    Result --> Loading
-    Match --> Menu
-    Library --> Menu
-    Loading -->|Escape| Menu
-    Menu -->|Escape| Title
+    Title --> Menu
+    Menu --> Loading[Build decks and preload art]
+    Loading --> RPS[Rock paper scissors]
+    RPS -->|Tie| RPS
+    RPS --> Order[Winner chooses first or second]
+    Order --> Mulligan[One redraw of zero to five cards]
+    Mulligan --> Ready[Both hands ready]
+    Ready --> StandUp[Stand up Vanguard]
+    StandUp --> Stand
+    Stand --> Draw
+    Draw --> Ride
+    Ride --> Main
+    Main -->|First global turn| End
+    Main -->|Later turn| Battle
+    Battle --> End
+    End --> Stand
 ```
 
-`App` owns navigation, selected cards/attackers, temporary guard dragging, UI timers, artwork, and the active `MatchGame`. `PresentationArt` owns the landscape, transparent character renders, logo, and Rajdhani font shared by the title, menu, and loading screens. Scene particles and the title prompt animate with Macroquad time.
+Story Mode selects a school route/chapter before loading; Quick Fight uses the first chapter. Library and Result remain separate screens. `App::start_match` clears old selections, log visibility, power animation, and opening-card selections.
 
-Starting a fight clears transient selections and enters `Screen::Loading`. The first loading stage builds the selected story chapter's decks; the second preloads visible opening-card textures. Progress reports completed stages. After the work completes, a short transition reveals the field. Escape cancels the loading screen and discards the pending match.
+`MatchGame::new` prepares a starter Vanguard and five-card hand for each fighter, then waits in Setup. `engine/opening.rs` implements RPS, replayed ties, first/second selection, and a single mulligan. The CPU winner chooses first. Human selections are validated before any card moves. Selected cards go to the bottom (`Vec` index zero), replacements come from the top (`Vec::pop`), then the remaining deck is shuffled. The CPU keeps one card of grades one through three where possible. Both hands stay at five until the first actual Draw phase.
 
-## Rules and battle flow
+The requested first/second choice and bottom-return mulligan use current setup conventions alongside the historical card pool. They are explicit project behavior; the old 2014 rules used different setup details. No modern Ride Deck or Order zones are added.
 
-`MatchGame` contains both players, phase, turn number, chapter, message/log, outcome, and an optional `PendingAttack`. The rules layer does no drawing or I/O.
+## Turn and battle state
 
-Player phases proceed through Ride, Call/Main, and Battle. Ending a turn prepares the CPU and runs its simplified ride/call/ability decisions. Each CPU attack pauses as a `PendingAttack` so the user can call guardians, intercept, or pass. Resolving an attack applies drive checks, shield, retirement or damage, sends guardians to drop, and checks for defeat. The UI waits briefly before advancing the CPU to another attack.
+`turn` is the global turn number, beginning at one for whichever fighter starts. Human phases include Stand, Draw, Ride, Call/Main, and Battle. CPU phases use `TurnStage` under `Phase::Cpu`. Stand waits 1.5 seconds, including a pause, eased rotation and settling; Draw lasts 0.8 seconds before the single draw commits. Other CPU stages advance every 0.65 seconds. Only the first global turn skips Battle, so the second fighter can attack on their first personal turn.
 
-Rear-guard slots have a fixed meaning everywhere:
+The field-first HUD uses a floating vertical phase list, enlarged active phase, corner fighter portraits, card-stack/hand icons and counts, compact right-side commands, and an optional log drawer. Routine phase narration is hidden. `MatchPrompt` derives legal decisions without drawing or mutating the match. Opening Main offers End Turn directly. Calls include legal trigger units and overcalls, retiring the previous occupant.
+
+`PendingAttack` advances through Guard → Drive → Damage → Close. The UI waits for human guarding and required trigger choices; other check steps advance every 0.55 seconds. Vanguard swings have one drive check, or two at grade three; rear-guard swings have none. Matching-clan classic triggers grant +5000 power to a chosen unit. Critical and power can target different units; Stand targets a rear-guard; Draw adds one extra card; Heal compares damage before the checked card enters damage and can remove face-down damage. A sixth-damage Heal resolves before checking the six-damage loss condition.
+
+Live battle totals recalculate the attacker, current booster, target and guardians after effects. A damage-trigger defense increase does not cancel the remaining damage checks of an already-hitting critical attack. Temporary power/critical expires at the turn boundary. Locked rear-guards unlock at their owner's End, and stay ineligible during Stand. Empty-deck loss is checked after the current check/effects finish.
+
+The human currently starts check resolution explicitly after the CPU guards. The requested automatic resolution and all-attacks-finished End Turn transition remain pending in [todo.md](../todo.md), with highlighted function links.
+
+Rear-guard slots are shared everywhere:
 
 | Index | Circle |
 | --- | --- |
-| 0 | Left back row |
-| 1 | Left front row |
-| 2 | Center back row, behind Vanguard |
-| 3 | Right front row |
-| 4 | Right back row |
+| 0 | Left back |
+| 1 | Left front |
+| 2 | Center back, behind Vanguard |
+| 3 | Right front |
+| 4 | Right back |
 
-`AttackUnit` maps a Vanguard or rear-guard selection to its unit and directly aligned booster. `GuardSource` unifies hand guardians and eligible grade-two front-row interceptors. These helpers let CPU and human attacks share the same battle resolver.
+`AttackUnit` resolves field selections and aligned boosters. Tapping an eligible booster can select its attacker with boosting enabled; tapping it again during target selection toggles the preview. Declaring a boosted attack rests both participants. `GuardSource` unifies hand guardians and eligible front-row grade-two interceptors.
 
-This remains a simplified historical prototype: Limit Break flags and several named abilities use selected hard-coded effects; the application does not interpret all printed card text.
+This remains a prototype: CPU decisions, Limit Break effects, Break Ride effects, sentinels, and many printed card abilities are simplified. The engine does not interpret arbitrary card text.
 
-## Drawing, geometry, and input
+## Geometry, motion, and artwork
 
-`BattlefieldLayout` transforms a 720-unit-high logical tabletop into the available screen rectangle while preserving card proportions. The opposing side mirrors local positions. Rendering and click detection use the same methods for rear-guards, Vanguard, Guardian Circle, and damage cards.
+`BattlefieldLayout` projects a 720-unit logical field with a slight perspective taper. Rendering and input share circle/card/damage geometry. The arena uses dark green hexagons, yellow rear circles, blue Vanguard circles, a complete green Guardian ellipse, and metallic translucent side-zone frames. Blue column connectors are removed. The era's classic field is mirrored for the opponent.
 
-The field's dark surface, metallic blue rails, yellow Rear-guard rings, blue Vanguard rings, and full green Guardian Circle follow visual cues from the official *Ride to Victory!!* screenshots. Circle graphics sample the transparent community template; auxiliary zones follow the classic field used by the prototype's card era.
+Damage is one overlapping sideways stack per fighter. Reverse-order hit testing selects the visible top card or exposed strip. Face-up and sleeve views use the same rotated bounds. Manual damage flips update the resource state used by automatic Counter-Blast costs; they do not activate or prepay an ability. Required Heal choices temporarily select damage through the same stack geometry.
 
-Damage occupies one pocket per fighter. All damage cards are landscape/sideways rectangles, arranged in a vertical overlapping stack. Later cards draw on top. `damage_at` searches those rectangles in reverse drawing order, so an exposed strip selects its own card while an overlap selects the visible top card. Face-up and sleeve images share the same rotated bounds. Hover previews show a complete upright face for reading.
+`HandLayout` shares overlapping-card drawing and hit testing, with paging for large hands. Draw animation starts at `BattlefieldLayout::deck_rect` and ends at `HandLayout::draw_destination`. Existing cards ease toward the next hand's spacing while the incoming card travels; it flips face up near arrival and commits into the same slot. When the next card belongs to another page, its back shrinks into the paging control and the visible hand stays in place. Opposing draws stay hidden. `motion.rs` provides clamped interpolation and easing. Stand cards rotate smoothly while power/grade anchors follow their rotated bounds. The Stand Up banner fades in and out; the power meter interpolates current totals each frame.
 
-`DamageCard::face_up` stores resource state independently of sideways orientation. During the player's turn, with no unresolved battle or result, a manual click toggles this state and logs the change. Turning a card face down spends a manual resource; turning it face up is a manual Counter-Charge/correction. These controls do not activate an ability. The Limit Break button pays its own Counter-Blast 2 from remaining face-up damage.
+`CardArt` resolves normalized names to bundled printings and loads/caches only needed textures, including the next human card during Draw. `FighterArt` embeds official portraits for Aichi, Kai, Morikawa, Kamui, Misaki, Ren, Asaka, Leon, Naoki, and Takuto. Standing cutouts are also downloaded for future scenes. Unknown fighters use the initial fallback. Newer promotional cosmetics do not change the historical card catalog.
 
-`HandLayout` performs the equivalent shared drawing/hit-testing work for the overlapping, paginated hand ribbon. Guard dragging records the original press position and commits a guardian only on a valid release over the Guardian Circle.
-
-## Card and artwork data
-
-- `Card`, `Unit`, `DamageCard`, and `Player` hold factual card attributes and mutable match state.
-- `game/deck.rs` reads the bundled official-era JSON and assembles sample clan lists. These are not extracted 3DS deck recipes.
-- `CardArt` maps normalized names to possible printing paths, searches install/project/working-directory roots, and caches visible textures. A missing printing can fall back to another printing with the same name.
-- Tabletop textures, title artwork, and the font are embedded at compile time. Card faces are loaded from the bundled `assets/card_images` tree at runtime.
-- The asset fetchers refresh downloaded content and provenance. The generated Planet Cray-inspired landscape is kept separately with its exact image-generation prompt; running the download script does not regenerate it.
+Downloaded artwork and refresh commands are documented in [asset provenance](../assets/README.md). Publisher/game screenshots are research material in [the reference archive](images/references/README.md), separate from runtime art.
 
 ## Verification
 
-The current tests cover attack targets, boosters, guards/intercepts, CPU battle pauses, selected trigger behavior, damage resource changes, overlapping damage hit order, sideways proportions, both Guardian Circle halves, hand pagination, and card-art fallback paths. Build/format checks cover compilation and formatting. Native visual review covers the title/menu scene, dark field, complete Guardian Circle, sideways stack, and Counter-Blast interaction.
+Run `cargo fmt --check`, `cargo test`, and `cargo build`. Tests cover both starting orders, all RPS pairings, redraw validation and replacement order, one draw per turn, first-turn attack restrictions, paced CPU and human stages, guarding/intercepts, split triggers, sixth-damage Heal, live boosted power, bonus expiry, Lock timing, deck-out, shared field/hand geometry, and artwork resolution. Native review captures verify the phase/portrait/zone layout and opening screens; timing quality also needs play-through review.
