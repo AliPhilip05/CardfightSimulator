@@ -41,6 +41,7 @@ impl CardArt {
                     .entry(normalize_card_name(name))
                     .or_default()
                     .push(PathBuf::from(path));
+                paths_by_name.insert(printing_key(record), vec![PathBuf::from(path)]);
             }
         }
 
@@ -54,6 +55,23 @@ impl CardArt {
 
     pub(super) fn preload(&mut self, names: &[String]) {
         let keys: HashSet<_> = names.iter().map(|name| normalize_card_name(name)).collect();
+        self.preload_keys(keys);
+    }
+
+    pub(super) fn preload_records(&mut self, indices: &[usize], records: &[Value]) {
+        let keys = indices
+            .iter()
+            .filter_map(|i| records.get(*i))
+            .map(printing_key)
+            .collect();
+        self.preload_keys(keys);
+    }
+
+    pub(super) fn printing(&self, record: &Value) -> Option<&Texture2D> {
+        self.textures.get(&printing_key(record))
+    }
+
+    fn preload_keys(&mut self, keys: HashSet<String>) {
         if self.textures.len() + keys.len() > TEXTURE_CACHE_LIMIT {
             self.textures.retain(|key, _| keys.contains(key));
         }
@@ -84,6 +102,10 @@ impl CardArt {
             })
         })
     }
+}
+
+fn printing_key(record: &Value) -> String {
+    format!("printing:{}", record["card_number"].as_str().unwrap_or(""))
 }
 
 fn artwork_roots(
@@ -134,6 +156,23 @@ pub(super) fn normalize_card_name(name: &str) -> String {
 mod tests {
     use super::*;
     use serde_json::json;
+
+    #[test]
+    fn editor_printings_resolve_their_exact_image_paths() {
+        let records = [
+            json!({"card_name": "Dragonic Overlord", "card_number": "BT01/004EN", "image_file": "assets/card_images/BT01_004EN.png"}),
+            json!({"card_name": "Dragonic Overlord", "card_number": "BT15/004EN", "image_file": "assets/card_images/BT15_004EN.png"}),
+        ];
+        let art = CardArt::new(&records);
+        for record in &records {
+            assert_eq!(
+                art.paths_by_name[&printing_key(record)],
+                vec![PathBuf::from(record["image_file"].as_str().unwrap())]
+            );
+            assert!(art.load_image(&printing_key(record)).is_some());
+        }
+        assert_ne!(printing_key(&records[0]), printing_key(&records[1]));
+    }
 
     #[test]
     fn local_card_art_decodes_with_an_unrelated_working_directory() {

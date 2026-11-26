@@ -1,0 +1,24 @@
+[
+  {
+    "file": "assets/branding/sources/vanguard-wordmark.png",
+    "source_url": "https://en.cf-vanguard.com/wp/wp-content/uploads/vg_new_logo.png",
+    "source_page": "https://en.cf-vanguard.com/business/media-kit/logos/",
+    "sha256": "9b5018053eb6aa6bac95ddf8de8227ce214bcd6ab29636208fecbdced40f2f90",
+    "size": [
+      600,
+      258
+    ],
+    "processing": "Unchanged download"
+  },
+  {
+    "file": "assets/branding/sources/lock-on-victory-logo.png",
+    "source_url": "https://www.cs.furyu.jp/vanguard-lov/images/top/logo.png",
+    "source_page": "https://www.cs.furyu.jp/vanguard-lov/",
+    "sha256": "56f736056dbe5604f25f9d19f53f6c7e6e7ae556e2c70bb647d13d482e905044",
+    "size": [
+      361,
+      157
+    ],
+    "processing": "Unchanged download; branding layout reference, not used as an English title"
+  }
+]

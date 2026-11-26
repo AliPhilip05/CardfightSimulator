@@ -15,3 +15,10 @@ These images are retained for future documentation and visual comparison. `sourc
 The original [Dear Days 2 publisher presentation](dear-days-2-opening-presentation.pdf) is retained with full rendered pages 17 and 18. Additional downloaded Stride feature panels and sampled Dear Days trailer frames are retained too. Some panels concern story, decks or options rather than battle; their filenames identify feature numbers without claiming all are battle captures.
 
 Do not confuse these references with [current application captures](../../README.md), or assume their modern zones/rules apply to this historical card pool. See [the research comparison](../../../RESEARCH.md) for decisions made from them.
+
+## Check presentation references
+
+- [Supplied classic drive-check screenshot](user-drive-check-reference.png): diagonal check ribbons, revealed card, metallic/circuit framing, and field continuity.
+- [Supplied Dear Days sequence](user-dear-days-check-sequence.png): the checking fighter's character panel, cut-in transition, trigger announcement, and return to the field. The existing publisher trailer source in `sources.json` shows the damage sequence around 27.4–32.4 seconds.
+
+These attachments are preserved unchanged. English check ribbons, motion, frame, and symbols are recreated in runtime drawing code; official standing characters, sleeves, real card art, and zone art come from the existing collected assets. [Native implementation captures](../../check-animations.md) are separate from these game references.

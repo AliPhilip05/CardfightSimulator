@@ -21,9 +21,7 @@ impl PresentationArt {
             cray: embedded_texture(include_bytes!("../../assets/presentation/planet-cray.png")),
             aichi: embedded_texture(include_bytes!("../../assets/fighters/aichi-standing.png")),
             kai: embedded_texture(include_bytes!("../../assets/fighters/kai-standing.png")),
-            logo: embedded_texture(include_bytes!(
-                "../../assets/presentation/vanguard-logo.png"
-            )),
+            logo: embedded_texture(include_bytes!("../../assets/branding/game-logo.png")),
             font: load_ttf_font_from_bytes(include_bytes!(
                 "../../assets/fonts/Rajdhani-SemiBold.ttf"
             ))
@@ -180,16 +178,9 @@ impl PresentationArt {
         );
         let bottom = origin.y + size.y;
         self.centered(
-            "LIMIT BREAK  /  BREAK RIDE",
-            w * 0.745,
-            bottom + 25.0 * s,
-            24.0 * s,
-            GOLD,
-        );
-        self.centered(
             "STAND UP, VANGUARD!",
             w * 0.745,
-            bottom + 53.0 * s,
+            bottom + 29.0 * s,
             18.0 * s,
             BLUE,
         );

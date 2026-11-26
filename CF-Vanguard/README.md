@@ -12,7 +12,13 @@ From this project directory:
 cargo run
 ```
 
-The window opens at 1440 × 960 and can be resized. Startup shows loading progress, followed by an animated title scene with Aichi and Kai over a Planet Cray-inspired landscape. Press Enter or click to open Story Mode, Quick Fight, and the era card library. Entering a match loads decks and opening card art before revealing the field.
+The window opens at 1440 × 960 and can be resized. Startup shows loading progress, followed by an animated title scene with Aichi and Kai over a Planet Cray-inspired landscape. Press Enter or click to open Story Mode, Quick Fight, and Deck Builder. Entering a match loads decks and opening card art before revealing the field.
+
+The app now has a transparent Vanguard icon and matching English title logo made only from sourced, non-AI artwork. On macOS, `python3 scripts/build_macos_app.py` builds `dist/Cardfight Vanguard.app` with a full-resolution Finder/Dock icon and bundled card art. The PNG/ICO/ICNS exports and provenance are under `assets/branding/`.
+
+## Deck Builder
+
+Build your Quick Fight deck in a full-window workshop with real card artwork and clan symbols. Browse **All Cards** or choose a color-coded nation and clan, then combine **Grade 0–4** filters. Search and sorting stay at the top; the card preview, deck strip, and grade/trigger counts stay visible. Choose a clan and **Load Clan Sample** to get started. Select cards to add/remove copies, then **Save Deck** or **Save & Fight**. Saved decks carry into later Quick Fights. See the [deck workshop guide](docs/deck-builder.md) for controls, validation, persistence, and visual references.
 
 ## Controls
 
@@ -26,6 +32,8 @@ The window opens at 1440 × 960 and can be resized. Startup shows loading progre
 - **Damage Zone / Counter-Blast:** cards lie sideways in one overlapping vertical stack, like the printed mat. During your turn, click a card's exposed strip to turn it face down for manual Counter-Blast; click again to restore it for manual Counter-Charge or to correct a click. `CB` shows available face-up damage. Hover face-up damage for a larger preview. You cannot flip the opponent's damage or change resources during an unresolved attack or after the match ends.
 - **End Turn:** passes play to the CPU. Finish guarding or pass on each attack to continue.
 - **Limit Break / Break Ride:** activate the corresponding buttons when available. Limit Break automatically pays its own Counter-Blast 2 from available face-up damage; manual flips do not activate an ability or prepay that button's cost.
+- **Trigger Zone:** a resolved checked card leaves this zone immediately: drive cards go to hand, damage cards go to damage. No previous-check afterimage remains.
+- **Check animations:** Drive and damage reveals use English angled cut-ins, a sleeve-to-card flip, the checking fighter's real character render, and distinct Critical/Draw/Stand/Heal announcements. The battle waits for the animation before presenting trigger choices. See the [check presentation guide](docs/check-animations.md).
 - **Triggers:** choose the highlighted unit for power, critical or Stand; select a damage strip for Heal. Checks pause for your choices and then continue.
 - **Log:** opens a compact recent-plays drawer. **Escape** closes it or cancels a current selection before returning to the menu.
 
@@ -45,6 +53,8 @@ The [VangPro research report](docs/research/vangpro-research.md) compares public
 - `src/ui/presentation.rs` draws the shared title/menu/loading scene, official character renders and logo, animated particles, and loading progress.
 - `src/ui/cards.rs` draws cards and hit areas; `src/ui/drawing.rs` holds shared vector primitives and palette.
 - `src/game/card.rs` defines card, unit, and player data.
+- `src/game/deck_editor.rs` owns catalog filters, sorting, editable lists, validation, samples, and saved Quick Fight decks.
+- `src/ui/deck_workshop.rs` draws the full-window deck builder and handles its controls.
 - `src/game/deck.rs` builds 50-card clan decks from the bundled official card catalog, with real card names, stats, triggers, and four-copy limits.
 - `src/game/engine.rs` implements turn phases, attacks, guards, triggers, and CPU actions.
 - `src/story.rs` contains chapter and school-route data.

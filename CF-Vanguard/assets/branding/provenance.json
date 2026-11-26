@@ -1,0 +1,62 @@
+{
+  "method": "Deterministic Pillow compositing of non-AI source artwork, circle geometry, shadows, and licensed typography. No image generation or AI assets.",
+  "reference_game": "assets/branding/sources/lock-on-victory-logo.png (publisher layout reference only)",
+  "inputs": [
+    {
+      "file": "assets/branding/sources/vanguard-wordmark.png",
+      "source": "https://en.cf-vanguard.com/business/media-kit/logos/",
+      "use": "Official media-kit wordmark; Japanese subtitle omitted from the English output",
+      "sha256": "9b5018053eb6aa6bac95ddf8de8227ce214bcd6ab29636208fecbdced40f2f90"
+    },
+    {
+      "file": "assets/fighters/aichi-standing.png",
+      "source": "https://anime.cf-vanguard.com/vg2018-if/characters/aichi-sendou/",
+      "use": "Official Aichi render; upper-body crop and resize",
+      "sha256": "9986369be281623c3e998b6e228abce1a0a549715e5b26296b711c99c218b561"
+    },
+    {
+      "file": "assets/fighters/kai-standing.png",
+      "source": "https://anime.cf-vanguard.com/vg2018-if/characters/toshiki-kai/",
+      "use": "Official Kai render; upper-body crop and resize",
+      "sha256": "c242bf6dd6f62a51bfc9511de0ddbf200b537314ae8dadf75427250df545358d"
+    },
+    {
+      "file": "assets/tabletop/vanguard-zones.png",
+      "source": "https://www.reddit.com/r/cardfightvanguard/comments/rpbpwi/",
+      "use": "Collected community mat: Vanguard circle crop",
+      "sha256": "f0d75df123621d4d8c59aac5af9dae36231e45df0aa03c7675631d53aa54f46f"
+    },
+    {
+      "file": "assets/clans/royal-paladin.png",
+      "source": "https://static.wikia.nocookie.net/cardfight/images/2/22/Icon_RoyalPaladin.png/revision/latest?format=original",
+      "use": "Original wiki clan symbol; resize only",
+      "sha256": "a0f94c30801b535f22b97923065a01fd7fb7322317b8185f2b3c37d14f7c7559"
+    },
+    {
+      "file": "assets/clans/kagero.png",
+      "source": "https://static.wikia.nocookie.net/cardfight/images/1/12/Icon_Kagero.png/revision/latest?format=original",
+      "use": "Original wiki clan symbol; resize only",
+      "sha256": "7cd214f0137f8223eb4da977ef262535d1d1968c2e16ec554c2144759c0e2494"
+    }
+  ],
+  "font": {
+    "file": "assets/fonts/Rajdhani-SemiBold.ttf",
+    "license": "assets/fonts/OFL.txt"
+  },
+  "outputs": {
+    "AppIcon.icns": "9e6697a0fdc245c37d66fc45444470ebe2eaf6fe89da3dc514fbc5e12ea9df8a",
+    "app-icon-1024.png": "fb74b270c6d1b8e761eda8aa5fca0e5f1df86d4131071f9b7ffa1e98de353305",
+    "app-icon-128.png": "70663672d8bf5c00b47c6bbcd55a68c38de4d4514109564a4be5765e972e659e",
+    "app-icon-16.png": "b6e49b6f77dc920c208bfdd74064f49830ad33f90eb3693a288aeb91db0b7ba3",
+    "app-icon-16.rgba": "89f735986295f6e15ad4274d4da5dd03153d375aa9ef6dffed5ee750cf4a8712",
+    "app-icon-256.png": "cc61d9e793af4bbead34793114d0f258a4d710ef39aa2b063b9aa4b9dadb86f5",
+    "app-icon-32.png": "283e6bde9eb960471e8e812c7c01fe5872e4dd7825a0f886aa688986aadece7e",
+    "app-icon-32.rgba": "ec8baaa4cf22848c8ef95a0cb5035e598786f354f99c69631dba71075b6a7146",
+    "app-icon-512.png": "32689249058536278795c9d47eb49d300fb6c5c66f5b9e602383f80428b5e151",
+    "app-icon-64.png": "341a3968c01c78365a7d122287a0bac0258f80c09f25eba150be7cfd537124cd",
+    "app-icon-64.rgba": "fd6ffb6ca96e104cd423a5599b24a5b773d6eea6e5777c8eec8be3a64222ddc3",
+    "app-icon.ico": "2d23140f3540718e9d4b34ba82d204afe6b36973661fcfb00039a4f8b6212eb8",
+    "app-icon.png": "fb74b270c6d1b8e761eda8aa5fca0e5f1df86d4131071f9b7ffa1e98de353305",
+    "game-logo.png": "39d47b0e256699525cebcd202675ae6579ea0bc0db733dc31b71e71dd728ba4f"
+  }
+}

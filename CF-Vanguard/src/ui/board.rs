@@ -134,6 +134,13 @@ impl BattlefieldLayout {
         )
     }
 
+    pub(super) fn check_rect(&self, cpu: bool) -> Rect {
+        self.rect(
+            self.side_point(vec2(self.width * 0.90, 350.0), cpu),
+            vec2(87.0, 126.0),
+        )
+    }
+
     fn damage_center(&self, cpu: bool) -> Vec2 {
         self.side_point(vec2(self.width * 0.10, 580.0), cpu)
     }

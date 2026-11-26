@@ -1,0 +1,278 @@
+[
+  {
+    "clan": "Angel Feather",
+    "file": "assets/clans/angel-feather.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/e/ec/Icon_AngelFeather.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_AngelFeather.png",
+    "sha256": "ff4339c10d53d005ac54e84a8a8ef48eabadc56d653d9907b0b457e8be140d82",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Aqua Force",
+    "file": "assets/clans/aqua-force.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/6/60/Icon_AquaForce.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_AquaForce.png",
+    "sha256": "6622f833afa89455a573cba61d44c53b910aa9453bb56adeb0f47071583d18c6",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Bermuda Triangle",
+    "file": "assets/clans/bermuda-triangle.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/d/d9/Icon_BermudaTriangle.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_BermudaTriangle.png",
+    "sha256": "262a389d0cbcb71099ae5496cc1d45d151529fba6fff97cd495809574f63f570",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Dark Irregulars",
+    "file": "assets/clans/dark-irregulars.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/3/31/Icon_DarkIrregulars.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_DarkIrregulars.png",
+    "sha256": "553e9aa7ced00b57ac4ade5e85e86874418ab57248a2317b9d985014bc47fa24",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Dimension Police",
+    "file": "assets/clans/dimension-police.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/f/f8/Icon_DimensionPolice.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_DimensionPolice.png",
+    "sha256": "f238f16853ceef4ab3b5474339895c31315e420ce0bf87528e1383e58859d124",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Genesis",
+    "file": "assets/clans/genesis.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/3/35/Icon_Genesis.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_Genesis.png",
+    "sha256": "79ea883be6f9714e8f446507b4a381c9c965e958c0ce03712c7ecb7e80acad5a",
+    "size": [
+      515,
+      515
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Gold Paladin",
+    "file": "assets/clans/gold-paladin.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/8/8a/Icon_GoldPaladin.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_GoldPaladin.png",
+    "sha256": "2b4a91b1a54489d93af117ac2c74e48ecfd84e5f5a085b2adb647a67828a4ba4",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Granblue",
+    "file": "assets/clans/granblue.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/4/4b/Icon_Granblue.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_Granblue.png",
+    "sha256": "0e6ee69fff159dc5c7e0d64ab8e280626638f42530413765f02c960d4d053423",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Great Nature",
+    "file": "assets/clans/great-nature.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/6/62/Icon_GreatNature.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_GreatNature.png",
+    "sha256": "962b09e159130e5675da71dc7aaa499a8548d4cf8e4f30775e66f676931a163a",
+    "size": [
+      515,
+      515
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Kagero",
+    "file": "assets/clans/kagero.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/1/12/Icon_Kagero.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_Kagero.png",
+    "sha256": "7cd214f0137f8223eb4da977ef262535d1d1968c2e16ec554c2144759c0e2494",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Link Joker",
+    "file": "assets/clans/link-joker.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/9/9b/Icon_LinkJoker.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_LinkJoker.png",
+    "sha256": "1086828ae0c64f09f4bae62ea78b7f6a16b071b2fd61d45606fcdedf6d06fd55",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Megacolony",
+    "file": "assets/clans/megacolony.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/7/72/Icon_Megacolony.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_Megacolony.png",
+    "sha256": "e2bb519309a923f153c9a52d6198f28f82274fe3487b9c7fdb99d442c48c5e2d",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Murakumo",
+    "file": "assets/clans/murakumo.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/5/52/Icon_Murakumo.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_Murakumo.png",
+    "sha256": "8c7d176060d6183ce1359837773e1a8a6c8371e5daf21949cb0875945decdfb1",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Narukami",
+    "file": "assets/clans/narukami.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/d/d0/Icon_Narukami.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_Narukami.png",
+    "sha256": "9cb7fbe8cb7af77412310441596d1dc7588c920f7acc4c9a21f654a8037fb8e1",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Neo Nectar",
+    "file": "assets/clans/neo-nectar.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/5/52/Icon_NeoNectar.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_NeoNectar.png",
+    "sha256": "f2687f4d9b3c35dfb69c4522b403509624a52daf33c56dca2e4867c54d0e3174",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Nova Grappler",
+    "file": "assets/clans/nova-grappler.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/3/3d/Icon_NovaGrappler.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_NovaGrappler.png",
+    "sha256": "3364853919037e5a75e11d900dc37c889534a023d51bf7117478f346a51904cc",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Nubatama",
+    "file": "assets/clans/nubatama.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/1/12/Icon_Nubatama.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_Nubatama.png",
+    "sha256": "505f41ca0021d04a9c9e4f2da20231f7b25560b29bbd51102967659c6ba290f3",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Oracle Think Tank",
+    "file": "assets/clans/oracle-think-tank.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/a/ab/Icon_OracleThinkTank.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_OracleThinkTank.png",
+    "sha256": "0b658994a8a3e07d4ddf1067986eda82f8b2af47972d2f9dbe0d2efb3aac4c08",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Pale Moon",
+    "file": "assets/clans/pale-moon.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/e/ed/Icon_PaleMoon.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_PaleMoon.png",
+    "sha256": "8a5c90d07724e4e065a0a0bf8c84420dd10f2f831ef1e7ea083385f9f450cd85",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Royal Paladin",
+    "file": "assets/clans/royal-paladin.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/2/22/Icon_RoyalPaladin.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_RoyalPaladin.png",
+    "sha256": "a0f94c30801b535f22b97923065a01fd7fb7322317b8185f2b3c37d14f7c7559",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Shadow Paladin",
+    "file": "assets/clans/shadow-paladin.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/2/24/Icon_ShadowPaladin.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_ShadowPaladin.png",
+    "sha256": "6f7d040caff2cf0ebf476cea17220703d95fafe6a20eafe9ff710fcd1baac5c8",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Spike Brothers",
+    "file": "assets/clans/spike-brothers.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/f/f0/Icon_SpikeBrothers.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_SpikeBrothers.png",
+    "sha256": "f6b8659e675e934a0376b18f0937f198d03203001f4f05094e7ca6dfcca1c6d4",
+    "size": [
+      512,
+      512
+    ],
+    "processing": "Original PNG, unchanged."
+  },
+  {
+    "clan": "Tachikaze",
+    "file": "assets/clans/tachikaze.png",
+    "source_url": "https://static.wikia.nocookie.net/cardfight/images/4/46/Icon_Tachikaze.png/revision/latest?format=original",
+    "source_page": "https://cardfight.fandom.com/wiki/File:Icon_Tachikaze.png",
+    "sha256": "f6c1a1e19cf746fad81cf5bd0588bf26a6b0dd95dc23069d7060682633f2c919",
+    "size": [
+      515,
+      515
+    ],
+    "processing": "Original PNG, unchanged."
+  }
+]

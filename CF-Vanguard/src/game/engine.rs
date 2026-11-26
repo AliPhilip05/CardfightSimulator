@@ -107,6 +107,47 @@ pub enum BattleStep {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CheckKind {
+    Drive,
+    Damage,
+}
+
+/// A numbered reveal lets presentation distinguish even consecutive identical cards.
+#[derive(Clone, Debug)]
+pub struct CheckReveal {
+    pub sequence: u64,
+    pub kind: CheckKind,
+    pub cpu: bool,
+    pub card: Card,
+    pub trigger_active: bool,
+    pub secondary_available: bool,
+}
+
+impl CheckReveal {
+    fn new(
+        sequence: u64,
+        kind: CheckKind,
+        cpu: bool,
+        card: &Card,
+        owner: &Player,
+        opponent_damage: usize,
+    ) -> Self {
+        Self {
+            sequence,
+            kind,
+            cpu,
+            card: card.clone(),
+            trigger_active: card.is_trigger() && matches_clan(owner, card),
+            secondary_available: match card.trigger {
+                Trigger::Heal => !owner.damage.is_empty() && owner.damage.len() >= opponent_damage,
+                Trigger::Stand => owner.rear.iter().flatten().any(|u| !u.locked),
+                _ => true,
+            },
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TriggerPart {
     Power,
     Critical,
@@ -174,6 +215,7 @@ pub struct MatchGame {
     pub winner: Option<bool>,
     pub player_calls: u8,
     pub pending_attack: Option<PendingAttack>,
+    pub check_reveal: Option<CheckReveal>,
     break_ride_restand: bool,
     cpu_attack_index: usize,
     cpu_stage: TurnStage,
@@ -181,10 +223,15 @@ pub struct MatchGame {
 
 impl MatchGame {
     pub fn new(chapter: Chapter) -> Self {
-        let player = prepare_player(
-            "You",
+        Self::with_player_deck(
+            chapter,
             build_deck(chapter.player_clan, chapter.player_boss, chapter.break_ride),
-        );
+        )
+    }
+
+    /// Starts the normal opening sequence with an already validated editor deck.
+    pub fn with_player_deck(chapter: Chapter, deck: Vec<Card>) -> Self {
+        let player = prepare_player("You", deck);
         let cpu = prepare_player(
             chapter.rival,
             build_deck(chapter.rival_clan, chapter.rival_boss, true),
@@ -204,6 +251,7 @@ impl MatchGame {
             winner: None,
             player_calls: 0,
             pending_attack: None,
+            check_reveal: None,
             break_ride_restand: false,
             cpu_attack_index: 0,
             cpu_stage: TurnStage::Stand,
@@ -546,6 +594,8 @@ impl MatchGame {
                 } else {
                     &mut self.player
                 };
+                // The reveal ends when the checked card leaves for its real zone.
+                owner.last_check = None;
                 if attack.step == BattleStep::Drive {
                     owner.hand.push(card);
                 } else {
@@ -599,6 +649,14 @@ impl MatchGame {
                     if let Some(card) = owner.draw() {
                         owner.last_check = Some(format!("Drive: {}", card.name));
                         self.message = format!("Drive check: {}", card.name);
+                        self.check_reveal = Some(CheckReveal::new(
+                            self.check_reveal.as_ref().map_or(1, |r| r.sequence + 1),
+                            CheckKind::Drive,
+                            attack.cpu_attacking,
+                            &card,
+                            owner,
+                            other.damage.len(),
+                        ));
                         prepare_trigger_check(&mut attack, owner, other.damage.len(), card);
                     }
                 } else {
@@ -658,6 +716,14 @@ impl MatchGame {
                     if let Some(card) = owner.draw() {
                         owner.last_check = Some(format!("Damage: {}", card.name));
                         self.message = format!("Damage check: {}", card.name);
+                        self.check_reveal = Some(CheckReveal::new(
+                            self.check_reveal.as_ref().map_or(1, |r| r.sequence + 1),
+                            CheckKind::Damage,
+                            !attack.cpu_attacking,
+                            &card,
+                            owner,
+                            other.damage.len(),
+                        ));
                         prepare_trigger_check(&mut attack, owner, other.damage.len(), card);
                     }
                 } else {
@@ -1296,6 +1362,67 @@ mod tests {
             }
         }
         panic!("attack failed to complete");
+    }
+
+    #[test]
+    fn check_events_number_identical_twin_drive_cards_and_use_the_checking_side() {
+        for cpu_attacking in [false, true] {
+            let mut game = battle();
+            game.player.vanguard.as_mut().unwrap().card.grade = 3;
+            game.cpu.vanguard.as_mut().unwrap().card.grade = 3;
+            game.player.deck = vec![card("Same card", 1, 6000, 5000); 10];
+            game.cpu.deck = game.player.deck.clone();
+            assert!(game.open_attack(
+                cpu_attacking,
+                AttackUnit::Vanguard,
+                AttackUnit::Vanguard,
+                false
+            ));
+            let mut events = Vec::new();
+            for _ in 0..30 {
+                if game.pending_attack.is_none() {
+                    break;
+                }
+                game.resolve_pending_attack();
+                if let Some(event) = game.check_reveal.as_ref() {
+                    if events
+                        .last()
+                        .is_none_or(|last: &CheckReveal| last.sequence != event.sequence)
+                    {
+                        events.push(event.clone());
+                    }
+                }
+            }
+            assert!(game.pending_attack.is_none());
+            assert!(game.player.last_check.is_none());
+            assert!(game.cpu.last_check.is_none());
+            assert_eq!(events.len(), 3);
+            assert_eq!(
+                events.iter().map(|r| r.sequence).collect::<Vec<_>>(),
+                [1, 2, 3]
+            );
+            assert!(events[..2]
+                .iter()
+                .all(|r| r.kind == CheckKind::Drive && r.cpu == cpu_attacking));
+            assert_eq!(events[2].kind, CheckKind::Damage);
+            assert_eq!(events[2].cpu, !cpu_attacking);
+            assert!(events
+                .iter()
+                .all(|r| r.card.name == "Same card" && !r.trigger_active));
+        }
+    }
+
+    #[test]
+    fn rear_guard_attacks_publish_damage_without_a_drive_reveal() {
+        let mut game = battle();
+        game.player.rear[1] = unit("Rear attacker", 2, 15000, 5000);
+        game.cpu.deck = vec![card("Damage card", 1, 6000, 5000); 10];
+        assert!(game.open_attack(false, AttackUnit::Rear(1), AttackUnit::Vanguard, false));
+        finish_attack(&mut game);
+        let event = game.check_reveal.unwrap();
+        assert_eq!(event.sequence, 1);
+        assert_eq!(event.kind, CheckKind::Damage);
+        assert!(event.cpu);
     }
 
     #[test]

@@ -3,6 +3,8 @@
 mod art;
 mod board;
 mod cards;
+mod check_animation;
+mod deck_workshop;
 mod drawing;
 mod fighters;
 mod match_flow;
@@ -18,10 +20,11 @@ use crate::story::{SchoolRoute, CHAPTERS};
 use art::{normalize_card_name, CardArt};
 use board::{draw_battlefield, BattlefieldHighlights, BattlefieldLayout, TabletopArt};
 use cards::{draw_guard_card, draw_player_hand, HandLayout};
+use check_animation::CheckAnimation;
+use deck_workshop::{DeckWorkshop, WorkshopAction};
 use drawing::{
     button, draw_ambient_background, draw_centered, draw_header, draw_round_panel,
-    draw_school_crest, draw_star_emblem, draw_wrapped, CREAM, CYAN, GOLD, INK, MUTED, PANEL,
-    PANEL_LIGHT, RED,
+    draw_school_crest, draw_star_emblem, CREAM, CYAN, GOLD, INK, MUTED, PANEL, RED,
 };
 use fighters::FighterArt;
 use macroquad::prelude::*;
@@ -100,12 +103,11 @@ pub struct App {
     tabletop_art: TabletopArt,
     fighters: FighterArt,
     power_display: PowerDisplay,
+    check_animation: CheckAnimation,
     card_records: Vec<serde_json::Value>,
     card_art: CardArt,
     show_battle_log: bool,
-    library_filter: String,
-    library_page: usize,
-    selected_library_card: Option<usize>,
+    deck_workshop: DeckWorkshop,
 }
 
 impl App {
@@ -145,12 +147,11 @@ impl App {
             },
             fighters: FighterArt::new(),
             power_display: PowerDisplay::default(),
+            check_animation: CheckAnimation::default(),
             card_art: CardArt::new(&card_records),
+            deck_workshop: DeckWorkshop::new(&card_records),
             card_records,
             show_battle_log: false,
-            library_filter: String::new(),
-            library_page: 0,
-            selected_library_card: None,
         };
         app.presentation.loading(1.0, "READY TO STAND UP");
         next_frame().await;
@@ -202,8 +203,8 @@ impl App {
             self.start_match();
         }
         if self.presentation.menu_button(
-            "ERA CARD LIBRARY",
-            "Explore the Limit Break and Break Ride card pool",
+            "DECK BUILDER",
+            "Explore cards, build your deck, and take it into Quick Fight",
             2,
         ) {
             self.screen = Screen::Library;
@@ -234,7 +235,15 @@ impl App {
                     chapter.rival_clan = clan;
                     chapter.rival_boss = boss;
                 }
-                self.match_game = Some(MatchGame::new(chapter));
+                self.match_game = Some(if !self.story_mode {
+                    if let Some(deck) = self.deck_workshop.quick_fight_deck(&self.card_records) {
+                        MatchGame::with_player_deck(chapter, deck)
+                    } else {
+                        MatchGame::new(chapter)
+                    }
+                } else {
+                    MatchGame::new(chapter)
+                });
                 self.loading_stage = 1;
             }
             1 => {
@@ -298,6 +307,7 @@ impl App {
     }
 
     fn draw_match(&mut self) {
+        let check_busy = self.check_animation.active(get_time());
         if self
             .match_game
             .as_ref()
@@ -324,6 +334,7 @@ impl App {
         if let Some(game) = self.match_game.as_mut() {
             if game.phase == Phase::Cpu
                 && game.pending_attack.is_none()
+                && !check_busy
                 && get_time() >= self.cpu_continue_at
             {
                 game.advance_cpu_turn();
@@ -335,17 +346,25 @@ impl App {
                 .pending_attack
                 .as_ref()
                 .is_some_and(|a| a.step != BattleStep::Guard && a.decision.is_none())
+                && !check_busy
                 && get_time() >= self.cpu_continue_at
             {
                 game.resolve_pending_attack();
                 self.cpu_continue_at = get_time() + 0.55;
             }
         }
-        let card_names = self
+        if let Some(game) = self.match_game.as_ref() {
+            self.check_animation
+                .observe(game.check_reveal.as_ref(), get_time());
+        }
+        let mut card_names = self
             .match_game
             .as_ref()
             .map(visible_card_names)
             .unwrap_or_default();
+        if let Some(name) = self.check_animation.revealed_name(get_time()) {
+            card_names.push(name.to_owned());
+        }
         self.card_art.preload(&card_names);
 
         let Some(game) = self.match_game.as_ref() else {
@@ -422,6 +441,20 @@ impl App {
                 self.card_art.textures(),
                 draw_progress,
             );
+        }
+        if self.check_animation.active(get_time()) {
+            self.check_animation.draw(
+                game,
+                &battlefield,
+                &self.tabletop_art,
+                &self.fighters,
+                self.card_art.textures(),
+                get_time(),
+            );
+            if is_key_pressed(KeyCode::Escape) {
+                self.screen = Screen::Menu;
+            }
+            return;
         }
         let new_page = hand.draw_page_controls(game.phase != Phase::Draw);
         let action = draw_action_panel(
@@ -837,192 +870,23 @@ impl App {
     }
 
     fn draw_library(&mut self) {
-        if is_key_pressed(KeyCode::Escape) {
-            if self.selected_library_card.take().is_none() {
-                self.screen = Screen::Menu;
-            }
-        }
-
-        if is_key_pressed(KeyCode::Backspace) {
-            self.library_filter.pop();
-            self.library_page = 0;
-        }
-        while let Some(character) = get_char_pressed() {
-            if !character.is_control() {
-                self.library_filter.push(character);
-                self.library_page = 0;
-            }
-        }
-
-        let query = self.library_filter.to_lowercase();
-        let filtered: Vec<usize> = self
-            .card_records
-            .iter()
-            .enumerate()
-            .filter_map(|(index, record)| {
-                let matches = query.is_empty()
-                    || ["card_name", "card_number", "clan", "product"]
-                        .iter()
-                        .filter_map(|field| record[*field].as_str())
-                        .any(|value| value.to_lowercase().contains(&query));
-                matches.then_some(index)
-            })
-            .collect();
-        let cards_per_page = 12;
-        let page_count = filtered.len().div_ceil(cards_per_page).max(1);
-        self.library_page = self.library_page.min(page_count - 1);
-        let first = self.library_page * cards_per_page;
-        let visible_indices = filtered
-            .iter()
-            .skip(first)
-            .take(cards_per_page)
-            .copied()
-            .collect::<Vec<_>>();
-        let visible_cards = visible_indices
-            .iter()
-            .map(|index| self.card_records[*index].clone())
-            .collect::<Vec<_>>();
-        let visible_names = visible_cards
-            .iter()
-            .filter_map(|card| card["card_name"].as_str().map(str::to_owned))
-            .collect::<Vec<_>>();
-        self.card_art.preload(&visible_names);
-
-        draw_header(
-            "3DS-ERA CARD ARCHIVE",
-            "Official card entries for BT01–BT15, EB01–EB10, and TD01–TD13.",
-        );
-        if button("BACK", 42.0, 42.0, 120.0, 44.0, MUTED) {
-            self.screen = Screen::Menu;
-        }
-
-        draw_round_panel(190.0, 113.0, screen_width() - 230.0, 42.0, PANEL, CYAN);
-        draw_text("SEARCH", 207.0, 139.0, 13.0, GOLD);
-        draw_text(
-            if self.library_filter.is_empty() {
-                "Type a card name, number, clan, or set"
-            } else {
-                &self.library_filter
-            },
-            282.0,
-            140.0,
-            16.0,
-            CREAM,
-        );
-        draw_text(
-            &format!("{} matches", filtered.len()),
-            screen_width() - 160.0,
-            140.0,
-            13.0,
-            MUTED,
-        );
-
-        for (slot, (index, record)) in visible_indices.iter().zip(&visible_cards).enumerate() {
-            let col = slot % 4;
-            let row = slot / 4;
-            let x = 42.0 + col as f32 * 348.0;
-            let y = 170.0 + row as f32 * 205.0;
-            let item = Rect::new(x, y, 330.0, 188.0);
-            draw_round_panel(x, y, item.w, item.h, PANEL, PANEL_LIGHT);
-            let name = record["card_name"].as_str().unwrap_or("Unknown card");
-            let key = normalize_card_name(name);
-            if let Some(texture) = self.card_art.textures().get(&key) {
-                draw_texture_ex(
-                    texture,
-                    x + 10.0,
-                    y + 9.0,
-                    WHITE,
-                    DrawTextureParams {
-                        dest_size: Some(vec2(106.0, 154.0)),
-                        ..Default::default()
-                    },
-                );
-            } else {
-                draw_round_panel(x + 10.0, y + 9.0, 106.0, 154.0, PANEL_LIGHT, GOLD);
-                draw_centered("NO IMAGE", x + 10.0, y + 87.0, 106.0, 12.0, MUTED);
-            }
-
-            let text_x = x + 128.0;
-            draw_wrapped(name, text_x, y + 28.0, 190.0, 13.0, CREAM, 3);
-            draw_text(
-                record["card_number"].as_str().unwrap_or(""),
-                text_x,
-                y + 84.0,
-                12.0,
-                GOLD,
-            );
-            draw_text(
-                &format!(
-                    "{}  ·  G{}  ·  {}",
-                    record["clan"].as_str().unwrap_or("Clan"),
-                    record["grade"].as_str().unwrap_or("?"),
-                    record["power"].as_str().unwrap_or("—")
-                ),
-                text_x,
-                y + 108.0,
-                11.0,
-                MUTED,
-            );
-            draw_wrapped(
-                record["product"].as_str().unwrap_or(""),
-                text_x,
-                y + 135.0,
-                190.0,
-                10.0,
-                MUTED,
-                2,
-            );
-
-            let mouse = mouse_position();
-            if item.contains(vec2(mouse.0, mouse.1)) && is_mouse_button_pressed(MouseButton::Left) {
-                self.selected_library_card = Some(*index);
-            }
-        }
-
-        draw_text(
-            &format!("PAGE {} / {}", self.library_page + 1, page_count),
-            screen_width() * 0.5 - 60.0,
-            screen_height() - 24.0,
-            13.0,
-            MUTED,
-        );
-        if self.library_page > 0
-            && button(
-                "PREVIOUS",
-                screen_width() * 0.5 - 170.0,
-                screen_height() - 52.0,
-                110.0,
-                36.0,
-                CYAN,
-            )
+        match self
+            .deck_workshop
+            .draw(&self.card_records, &mut self.card_art)
         {
-            self.library_page -= 1;
-        }
-        if self.library_page + 1 < page_count
-            && button(
-                "NEXT",
-                screen_width() * 0.5 + 60.0,
-                screen_height() - 52.0,
-                110.0,
-                36.0,
-                CYAN,
-            )
-        {
-            self.library_page += 1;
-        }
-
-        if let Some(index) = self.selected_library_card {
-            if let Some(record) = self.card_records.get(index) {
-                draw_card_detail(record, self.card_art.textures());
-            }
-            if button("CLOSE", screen_width() - 160.0, 30.0, 110.0, 42.0, GOLD) {
-                self.selected_library_card = None;
+            WorkshopAction::None => {}
+            WorkshopAction::Menu => self.screen = Screen::Menu,
+            WorkshopAction::Fight => {
+                self.story_mode = false;
+                self.chapter_index = 0;
+                self.start_match();
             }
         }
     }
 
     fn start_match(&mut self) {
         self.power_display = PowerDisplay::default();
+        self.check_animation = CheckAnimation::default();
         self.mulligan_selection.clear();
         self.match_game = None;
         self.loading_stage = 0;
@@ -1118,71 +982,6 @@ fn checked_card_name(check: &str) -> &str {
         .strip_prefix("Drive: ")
         .or_else(|| check.strip_prefix("Damage: "))
         .unwrap_or(check)
-}
-
-fn draw_card_detail(card: &serde_json::Value, textures: &HashMap<String, Texture2D>) {
-    draw_rectangle(
-        0.0,
-        0.0,
-        screen_width(),
-        screen_height(),
-        Color::new(0.005, 0.01, 0.025, 0.88),
-    );
-    let panel_x = screen_width() * 0.5 - 430.0;
-    let panel_y = 150.0;
-    draw_round_panel(panel_x, panel_y, 860.0, 640.0, PANEL, GOLD);
-
-    let name = card["card_name"].as_str().unwrap_or("Unknown card");
-    let image_key = normalize_card_name(name);
-    if let Some(texture) = textures.get(&image_key) {
-        draw_texture_ex(
-            texture,
-            panel_x + 34.0,
-            panel_y + 45.0,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(250.0, 365.0)),
-                ..Default::default()
-            },
-        );
-    }
-    let text_x = panel_x + 320.0;
-    draw_wrapped(name, text_x, panel_y + 64.0, 500.0, 23.0, CREAM, 2);
-    draw_text(
-        card["card_number"].as_str().unwrap_or(""),
-        text_x,
-        panel_y + 126.0,
-        15.0,
-        GOLD,
-    );
-    draw_text(
-        &format!(
-            "{} · G{} · {} power · {} shield",
-            card["clan"].as_str().unwrap_or("Clan"),
-            card["grade"].as_str().unwrap_or("?"),
-            card["power"].as_str().unwrap_or("?"),
-            card["shield"].as_str().unwrap_or("?")
-        ),
-        text_x,
-        panel_y + 157.0,
-        14.0,
-        CYAN,
-    );
-
-    let rules_text = card["text"]
-        .as_str()
-        .unwrap_or("No ability text is listed.")
-        .replace("<br>", " ")
-        .replace("&lt;", "<")
-        .replace("&gt;", ">");
-    draw_wrapped(&rules_text, text_x, panel_y + 200.0, 492.0, 13.0, CREAM, 19);
-    draw_text(
-        card["product"].as_str().unwrap_or(""),
-        text_x,
-        panel_y + 600.0,
-        12.0,
-        MUTED,
-    );
 }
 
 /// Keeps automatic Stand and Draw readable before the next decision phase.

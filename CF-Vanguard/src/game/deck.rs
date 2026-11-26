@@ -239,6 +239,24 @@ fn leaked(value: &str) -> &'static str {
     Box::leak(value.to_owned().into_boxed_str())
 }
 
+/// Converts an editor selection using the same stats as generated decks.
+pub fn card_from_record(record: &Value) -> Card {
+    let mut card = if is_trigger(record) {
+        to_trigger(record, "", trigger_kind(record))
+    } else {
+        to_unit(record, "")
+    };
+    let text = record["text"].as_str().unwrap_or("");
+    card.limit_break = text.contains("Limit-Break");
+    card.break_ride = matches!(
+        card.name,
+        "Dauntless Drive Dragon"
+            | "Eradicator, Vowing Sword Dragon"
+            | "Star-vader, Infinite Zero Dragon"
+    );
+    card
+}
+
 pub fn prepare_player(name: impl Into<String>, deck: Vec<Card>) -> Player {
     let mut player = Player::new(name, deck);
     let starter_index = player

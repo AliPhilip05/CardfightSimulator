@@ -25,3 +25,23 @@ Character and sleeve artwork belongs to Bushiroad / Project Vanguard and their c
 - `presentation/vanguard-logo.png` is the transparent English logo downloaded from the [official English site](https://en.cf-vanguard.com/wordpress/wp-content/themes/cf-vanguard/img/vg_logo_en.png). Source URLs, checksums and alpha verification are included in `tabletop/sources.json` and the existing asset fetcher.
 - `presentation/planet-cray.png` is original opaque environment artwork made with the built-in image_gen tool for this project: an anime fantasy canyon, stone causeway and distant citadel beneath a blue sky with moons and a ringed planet. It is inspired by the [official Planet Cray overview](https://en.cf-vanguard.com/introduction/world/) and is not an official background or extracted 3DS asset. The exact prompt and provenance are in `presentation/planet-cray.prompt.txt`.
 - `fonts/Rajdhani-SemiBold.ttf` is Rajdhani from the [Google Fonts repository](https://github.com/google/fonts/tree/main/ofl/rajdhani). Its SIL Open Font License is bundled in `fonts/OFL.txt`.
+
+## Deck workshop clan symbols
+
+`clans/` contains 23 unchanged original PNG clan/unit symbols from Cardfight!! Vanguard Wiki, matching the [supplied Kagero reference](https://static.wikia.nocookie.net/cardfight/images/1/12/Icon_Kagero.png/revision/latest?cb=20160923005243). Every clan in the bundled era catalog has a matching icon. `clans/sources.json` records clan names, direct original-image URLs, wiki file pages, sizes, and SHA-256 hashes. The `format=original` download avoids the wiki CDN's automatic WebP conversion. Refresh with `scripts/fetch_clan_icons.py` after installing `requirements-assets.txt`.
+
+The workshop also reuses the official English logo, Kai sleeve, and bundled official card artwork described above. Clan symbols and other official art retain their owners' copyrights; this manifest is provenance, not a new license. Dear Days/Area screenshots inform layout and remain research references rather than runtime UI textures.
+
+## Check cut-ins
+
+The Drive/Damage presentation reuses the collected official standing renders for all ten fighters, their side's existing sleeve, real card faces, and the era circle artwork. No new extracted game UI sprites are bundled. Metallic frames, English check labels, circuit motion, flashes, and trigger symbols are resolution-independent drawing code in `src/ui/check_animation.rs`. The two user-supplied reference screenshots are preserved unchanged under `docs/images/references/`, with provenance in that folder's manifest. They are not runtime textures.
+
+## App icon and English game logo
+
+`branding/app-icon.png` is a transparent 1024 × 1024 circular emblem composited from the official Aichi/Kai standing art, the collected Vanguard circle, the wiki Royal Paladin/Kagero unit symbols, and the official media-kit wordmark. `branding/game-logo.png` is a matching transparent English title mark with the Limit Break / Break Ride subtitle. No generated landscape or AI-created image is used in either output. The existing source files remain unchanged; the English component of the media-kit wordmark is isolated by omitting its Japanese subtitle.
+
+`branding/sources/` preserves unchanged downloads of the [official wordmark](https://en.cf-vanguard.com/business/media-kit/logos/) and [Lock on Victory publisher logo](https://www.cs.furyu.jp/vanguard-lov/). The latter is a layout reference; its Japanese title is not repurposed as this game's name. Source manifests and `branding/provenance.json` record URLs, transformations, and SHA-256 hashes. Existing character, circle, clan, and font provenance applies to their reused components.
+
+Run `python3 scripts/build_branding.py` with `requirements-assets.txt` installed to regenerate the PNG masters, 16–1024 px PNG variants, raw 16/32/64 RGBA window icons, Windows ICO, macOS ICNS, and Apple iconset. `iconutil` is used on macOS; Pillow supplies the cross-platform ICNS fallback. `src/main.rs` embeds the raw sizes so `cargo run` replaces Miniquad's default box icon. A packaged macOS app retains its full-resolution ICNS instead of replacing it with the runtime's 64 px representation.
+
+Run `python3 scripts/build_macos_app.py` on macOS for `dist/Cardfight Vanguard.app` (release), or add `--debug`. The bundle includes the icon in `Contents/Resources`, sets `CFBundleIconFile`/`CFBundleIconName`, and carries the external card image cache. All other runtime artwork is embedded. The bundle and Cargo outputs are ignored by Git.

@@ -386,5 +386,17 @@
     "source_url": "https://video.akamai.steamstatic.com/store_trailers/1881420/504079/579f6b757c665b53f389f52935c38f5f5374a07a/1751042550/hls_264_master.m3u8",
     "processing": "FFmpeg sample 18 of 3fps sequence beginning near 65s, scaled to 640px; no repainting",
     "sha256": "2b828bad7be76d1e89dca063ebd06a122d298deba6ad55accb1829e7821162b1"
+  },
+  {
+    "file": "user-drive-check-reference.png",
+    "source": "User-supplied check-animation reference, 2026-11-25",
+    "processing": "Unchanged attachment; reference only, not embedded in runtime",
+    "sha256": "997bf6c015036d4b02aac15bcb5340ec44fb0d1b97db15a01bb25664b71aeb3f"
+  },
+  {
+    "file": "user-dear-days-check-sequence.png",
+    "source": "User-supplied check-animation reference, 2026-11-25",
+    "processing": "Unchanged attachment; reference only, not embedded in runtime",
+    "sha256": "2e75dc42e65bdd32bda267a8ed81dcd474510c066eaef24de0110a728982ed77"
   }
 ]
